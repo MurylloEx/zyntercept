@@ -1,0 +1,65 @@
+#ifndef ZYNTERCEPT_SYSCALL_H
+#define ZYNTERCEPT_SYSCALL_H
+
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#include <Zyntercept/Core/Syscall/Windows/Windows.h>
+
+#define ZynterceptIs64BitSystem ZynterceptIs64BitSystemWindows
+#define ZynterceptIs32BitSystem ZynterceptIs32BitSystemWindows
+#define ZynterceptIs32BitProcess ZynterceptIs32BitProcessWindows
+#define ZynterceptIs64BitProcess ZynterceptIs64BitProcessWindows
+#define ZynterceptIsUnsupportedProcessArchitecture ZynterceptIsUnsupportedProcessArchitectureWindows
+#define ZynterceptIsCurrentProcess ZynterceptIsCurrentProcessWindows
+#define ZynterceptVirtualMemoryInformation ZynterceptVirtualMemoryInformationWindows
+#define ZynterceptAllocateMemory ZynterceptAllocateMemoryWindows
+#define ZynterceptReleaseMemory ZynterceptReleaseMemoryWindows
+#define ZynterceptProtectMemory ZynterceptProtectMemoryWindows
+#define ZynterceptQueryMemory ZynterceptQueryMemoryWindows
+#define ZynterceptWriteMemory ZynterceptWriteMemoryWindows
+#define ZynterceptReadMemory ZynterceptReadMemoryWindows
+#define ZynterceptFlushMicroprocessorCache ZynterceptFlushMicroprocessorCacheWindows
+#define ZynterceptAtomicWriteMemory ZynterceptAtomicWriteMemoryWindows
+
+#elif defined(__linux__)
+#include <Zyntercept/Core/Syscall/Linux/Linux.h>
+
+#define ZynterceptIs64BitSystem ZynterceptIs64BitSystemLinux
+#define ZynterceptIs32BitSystem ZynterceptIs32BitSystemLinux
+#define ZynterceptIs32BitProcess ZynterceptIs32BitProcessLinux
+#define ZynterceptIs64BitProcess ZynterceptIs64BitProcessLinux
+#define ZynterceptIsUnsupportedProcessArchitecture ZynterceptIsUnsupportedProcessArchitectureLinux
+#define ZynterceptIsCurrentProcess ZynterceptIsCurrentProcessLinux
+#define ZynterceptVirtualMemoryInformation ZynterceptVirtualMemoryInformationLinux
+#define ZynterceptAllocateMemory ZynterceptAllocateMemoryLinux
+#define ZynterceptReleaseMemory ZynterceptReleaseMemoryLinux
+#define ZynterceptProtectMemory ZynterceptProtectMemoryLinux
+#define ZynterceptQueryMemory ZynterceptQueryMemoryLinux
+#define ZynterceptWriteMemory ZynterceptWriteMemoryLinux
+#define ZynterceptReadMemory ZynterceptReadMemoryLinux
+#define ZynterceptFlushMicroprocessorCache ZynterceptFlushMicroprocessorCacheLinux
+#define ZynterceptAtomicWriteMemory ZynterceptAtomicWriteMemoryLinux
+
+#elif defined(unix) || defined(__unix__) || defined(__unix)
+#include <Zyntercept/Core/Syscall/Unix/Unix.h>
+
+#define ZynterceptIs64BitSystem ZynterceptIs64BitSystemUnix
+#define ZynterceptIs32BitSystem ZynterceptIs32BitSystemUnix
+#define ZynterceptIs32BitProcess ZynterceptIs32BitProcessUnix
+#define ZynterceptIs64BitProcess ZynterceptIs64BitProcessUnix
+#define ZynterceptIsUnsupportedProcessArchitecture ZynterceptIsUnsupportedProcessArchitectureUnix
+#define ZynterceptIsCurrentProcess ZynterceptIsCurrentProcessUnix
+#define ZynterceptVirtualMemoryInformation ZynterceptVirtualMemoryInformationUnix
+#define ZynterceptAllocateMemory ZynterceptAllocateMemoryUnix
+#define ZynterceptReleaseMemory ZynterceptReleaseMemoryUnix
+#define ZynterceptProtectMemory ZynterceptProtectMemoryUnix
+#define ZynterceptQueryMemory ZynterceptQueryMemoryUnix
+#define ZynterceptWriteMemory ZynterceptWriteMemoryUnix
+#define ZynterceptReadMemory ZynterceptReadMemoryUnix
+#define ZynterceptFlushMicroprocessorCache ZynterceptFlushMicroprocessorCacheUnix
+#define ZynterceptAtomicWriteMemory ZynterceptAtomicWriteMemoryUnix
+
+#else
+#error Zyntercept can only be built in Windows, Linux or Unix operating systems
+#endif
+
+#endif // ZYNTERCEPT_SYSCALL_H

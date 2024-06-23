@@ -1,0 +1,39 @@
+[project]
+name = "zyntercept"
+description = "Zyntercept is a Zydis-based library that has the ability to hook functions onto x86 and x86_64 microprocessor architectures. With Zyntercept you can create security software and instrument Win32/Linux APIs with __fastcall, __stdcall and __cdecl calling conventions."
+version = "1.0"
+languages = ["C", "CXX"]
+
+[options]
+ZYNTERCEPT_BUILD_TESTS = false
+ZYNTERCEPT_BUILD_EXAMPLES = false
+INSTALL_GTEST = false
+BUILD_GMOCK = false
+
+[conditions]
+tests = "ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT"
+examples = "ZYNTERCEPT_BUILD_EXAMPLES OR CMKR_ROOT_PROJECT"
+
+[fetch-content.Zydis]
+git = "https://github.com/zyantific/zydis"
+tag = "v4.0.0"
+
+[fetch-content.GTest]
+condition = "tests"
+git = "https://github.com/google/googletest"
+tag = "v1.14.0"
+
+[target.Zyntercept]
+type = "library"
+headers = ["Zyntercept/**.h"]
+sources = ["Zyntercept/**.cpp"]
+link-libraries = ["Zydis"]
+include-directories = ["."]
+
+[target.Zyntercept_Tests]
+condition = "tests"
+type = "executable"
+headers = ["Tests/**.h"]
+sources = ["Tests/**.cpp"]
+link-libraries = ["Zyntercept", "GTest::gtest"]
+include-directories = ["."]
