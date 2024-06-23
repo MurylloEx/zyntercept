@@ -31,6 +31,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 
 	ZynterceptPagedMemory Page = { 0 };
 	ZynterceptPagedMemoryOperation Request = { 0 };
+	ZynterceptPagedMemoryOperation Operations[2] = { 0 };
 
 	Request.Address = TargetFunction;
 	Request.Buffer = PrologueBuffer;
@@ -87,16 +88,26 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 		return ZYAN_FALSE;
 	}
 
+	ZyanU8* OriginalPrologueBuffer = (ZyanU8*)malloc(SizeOfFoundInstructions);
+
+	if (!OriginalPrologueBuffer) {
+		free(ReplaceableInstructions);
+		return ZYAN_FALSE;
+	}
+
+	memcpy(OriginalPrologueBuffer, PrologueBuffer, SizeOfFoundInstructions);
+
 	ZyanU64 NearPageAddress = ZynterceptAllocateNearestAddress(
 		ProcessIdentifier,
 		TargetFunction,
 		ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_64BIT,
 		ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED,
-		ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE);
+		ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE);
 
 	if (!NearPageAddress)
 	{
 		free(ReplaceableInstructions);
+		free(OriginalPrologueBuffer);
 		return ZYAN_FALSE;
 	}
 
@@ -141,56 +152,28 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 		goto FAILURE;
 	}
 
-	Page.Address = TargetFunction;
-	Page.Size = SizeOfFoundInstructions;
-	Page.Protection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
-	Page.State = 0;
-
-	/* Turn the code page non-immutable from RX to RW */
-	if (!ZynterceptProtectMemory(ProcessIdentifier, &Page))
-	{
-		goto FAILURE;
-	}
-
-	Request.Address = TargetFunction;
-	Request.Buffer = PrologueBuffer;
-	Request.Size = SizeOfFoundInstructions;
-
-	/* Overwrite the prologue of function */
-	if (!ZynterceptWriteMemory(ProcessIdentifier, &Request))
-	{
-		goto FAILURE;
-	}
-
-	/* Turn the code page back from RW to RX immutable */
-	if (!ZynterceptProtectMemory(ProcessIdentifier, &Page))
-	{
-		goto FAILURE;
-	}
-
+	// Store trampoline bytes in the first 192 bytes and relay bytes at last 64 bytes
 	PayloadBuffer.insert(PayloadBuffer.end(), std::begin(TrampolineBuffer), std::begin(TrampolineBuffer) + sizeof(TrampolineBuffer));
 	PayloadBuffer.insert(PayloadBuffer.end(), std::begin(RelayBuffer), std::begin(RelayBuffer) + sizeof(RelayBuffer));
 
-	Request.Address = TrampolineAddress;
-	Request.Buffer = PayloadBuffer.data();
-	Request.Size = PayloadBuffer.size() * sizeof(ZyanU8);
+	// Paged memory operation to write detour instruction (jmp dword ptr rel32)
+	Operations[0].Address = TargetFunction;
+	Operations[0].Buffer = PrologueBuffer;
+	Operations[0].Size = SizeOfFoundInstructions;
 
-	if (!ZynterceptWriteMemory(ProcessIdentifier, &Request))
-	{
-		goto FAILURE;
-	}
+	// Paged memory operation to write trampoline function
+	Operations[1].Address = TrampolineAddress;
+	Operations[1].Buffer = PayloadBuffer.data();
+	Operations[1].Size = static_cast<ZyanU64>(PayloadBuffer.size()) * sizeof(ZyanU8);
 
-	Page.Address = NearPageAddress;
-	Page.Size = ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_64BIT;
-	Page.Protection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE;
-	Page.State = 0;
-
-	if (!ZynterceptProtectMemory(ProcessIdentifier, &Page))
+	if (!ZynterceptAtomicWriteMemory(ProcessIdentifier, Operations, 2))
 	{
 		goto FAILURE;
 	}
 
 	*TrampolineFunction = TrampolineAddress;
+	*OriginalPrologue = OriginalPrologueBuffer;
+	*OriginalPrologueSize = SizeOfFoundInstructions;
 
 	return ZYAN_TRUE;
 
@@ -201,7 +184,9 @@ FAILURE:
 	Page.Protection = 0;
 
 	free(ReplaceableInstructions);
-	ZynterceptReleaseMemory(ProcessIdentifier, &Page);
+	free(OriginalPrologueBuffer);
+
+	ZYNTERCEPT_UNREFERENCED(ZynterceptReleaseMemory(ProcessIdentifier, &Page));
 
 	return ZYAN_FALSE;
 }
@@ -227,6 +212,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 
 	ZynterceptPagedMemory Page = { 0 };
 	ZynterceptPagedMemoryOperation Request = { 0 };
+	ZynterceptPagedMemoryOperation Operations[2] = { 0 };
 
 	Request.Address = TargetFunction;
 	Request.Buffer = PrologueBuffer;
@@ -283,12 +269,21 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		return ZYAN_FALSE;
 	}
 
+	ZyanU8* OriginalPrologueBuffer = (ZyanU8*)malloc(SizeOfFoundInstructions);
+
+	if (!OriginalPrologueBuffer) {
+		free(ReplaceableInstructions);
+		return ZYAN_FALSE;
+	}
+
+	memcpy(OriginalPrologueBuffer, PrologueBuffer, SizeOfFoundInstructions);
+
 	ZyanU64 NearPageAddress = ZynterceptAllocateNearestAddress(
 		ProcessIdentifier,
 		TargetFunction,
 		ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_32BIT,
 		ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED,
-		ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE);
+		ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE);
 
 	if (!NearPageAddress)
 	{
@@ -328,54 +323,28 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		goto FAILURE;
 	}
 
-	Page.Address = TargetFunction;
-	Page.Size = SizeOfFoundInstructions;
-	Page.Protection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
-	Page.State = 0;
-
-	/* Turn the code page non-immutable from RX to RW */
-	if (!ZynterceptProtectMemory(ProcessIdentifier, &Page))
-	{
-		goto FAILURE;
-	}
-
-	Request.Address = TargetFunction;
-	Request.Buffer = PrologueBuffer;
-	Request.Size = SizeOfFoundInstructions;
-
-	if (!ZynterceptWriteMemory(ProcessIdentifier, &Request))
-	{
-		goto FAILURE;
-	}
-
-	/* Turn the code page back from RW to RX immutable */
-	if (!ZynterceptProtectMemory(ProcessIdentifier, &Page))
-	{
-		goto FAILURE;
-	}
-
 	PayloadBuffer.insert(PayloadBuffer.end(), std::begin(TrampolineBuffer), std::begin(TrampolineBuffer) + sizeof(TrampolineBuffer));
 
-	Request.Address = TrampolineAddress;
-	Request.Buffer = PayloadBuffer.data();
-	Request.Size = PayloadBuffer.size() * sizeof(ZyanU8);
+	// Paged memory operation to write detour instruction (jmp dword ptr rel32)
+	Operations[0].Address = TargetFunction;
+	Operations[0].Buffer = PrologueBuffer;
+	Operations[0].Size = SizeOfFoundInstructions;
 
-	if (!ZynterceptWriteMemory(ProcessIdentifier, &Request))
-	{
-		goto FAILURE;
-	}
+	// Paged memory operation to write relay function and trampoline function at once
+	Operations[1].Address = TrampolineAddress;
+	Operations[1].Buffer = PayloadBuffer.data();
+	Operations[1].Size = static_cast<ZyanU64>(PayloadBuffer.size()) * sizeof(ZyanU8);
 
-	Page.Address = NearPageAddress;
-	Page.Size = ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_32BIT;
-	Page.Protection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE;
-	Page.State = 0;
-
-	if (!ZynterceptProtectMemory(ProcessIdentifier, &Page))
+	if (!ZynterceptAtomicWriteMemory(ProcessIdentifier, Operations, 2))
 	{
 		goto FAILURE;
 	}
 
 	*TrampolineFunction = TrampolineAddress;
+	*OriginalPrologue = OriginalPrologueBuffer;
+	*OriginalPrologueSize = SizeOfFoundInstructions;
+
+	return ZYAN_TRUE;
 
 FAILURE:
 	Page.Address = NearPageAddress;
@@ -384,7 +353,9 @@ FAILURE:
 	Page.Protection = 0;
 
 	free(ReplaceableInstructions);
-	ZynterceptReleaseMemory(ProcessIdentifier, &Page);
+	free(OriginalPrologueBuffer);
+
+	ZYNTERCEPT_UNREFERENCED(ZynterceptReleaseMemory(ProcessIdentifier, &Page));
 
 	return ZYAN_FALSE;
 }
@@ -397,19 +368,20 @@ ZyanBool __zyntercept_cdecl ZynterceptRevertDetourFunction64(
 	__zyntercept_in ZyanU64 OriginalPrologueSize)
 {
 	ZynterceptPagedMemoryOperation Operations[1] = { 0 };
+	ZynterceptPagedMemory TrampolinePage = { 0 };
 
 	Operations[0].Address = TargetFunction;
 	Operations[0].Buffer = OriginalPrologue;
 	Operations[0].Size = OriginalPrologueSize;
 
+	TrampolinePage.Address = TrampolineFunction;
+	TrampolinePage.Size = ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_64BIT;
+
 	if (!ZynterceptAtomicWriteMemory(ProcessIdentifier, Operations, 1)) {
 		return ZYAN_FALSE;
 	}
 
-	ZynterceptPagedMemory TrampolinePage = { 0 };
-
-	TrampolinePage.Address = TrampolineFunction;
-	TrampolinePage.Size = ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_64BIT;
+	free(OriginalPrologue);
 
 	if (!ZynterceptReleaseMemory(ProcessIdentifier, &TrampolinePage)) {
 		return ZYAN_FALSE;
@@ -426,19 +398,20 @@ ZyanBool __zyntercept_cdecl ZynterceptRevertDetourFunction32(
 	__zyntercept_in ZyanU64 OriginalPrologueSize)
 {
 	ZynterceptPagedMemoryOperation Operations[1] = { 0 };
+	ZynterceptPagedMemory TrampolinePage = { 0 };
 
 	Operations[0].Address = TargetFunction;
 	Operations[0].Buffer = OriginalPrologue;
 	Operations[0].Size = OriginalPrologueSize;
 
+	TrampolinePage.Address = TrampolineFunction;
+	TrampolinePage.Size = ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_32BIT;
+
 	if (!ZynterceptAtomicWriteMemory(ProcessIdentifier, Operations, 1)) {
 		return ZYAN_FALSE;
 	}
 
-	ZynterceptPagedMemory TrampolinePage = { 0 };
-
-	TrampolinePage.Address = TrampolineFunction;
-	TrampolinePage.Size = ZYNTERCEPT_SIZE_OF_DETOUR_EXECUTABLE_BLOCK_32BIT;
+	free(OriginalPrologue);
 
 	if (!ZynterceptReleaseMemory(ProcessIdentifier, &TrampolinePage)) {
 		return ZYAN_FALSE;
