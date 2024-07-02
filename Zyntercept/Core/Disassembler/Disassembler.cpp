@@ -8,7 +8,7 @@
 #include <string>
 
 ZyanBool __zyntercept_cdecl IsRelative(
-    __zyntercept_in ZydisDecoded *DecodedInstruction)
+    __zyntercept_in ZydisDecoded* DecodedInstruction)
 {
     ZydisDecodedInstruction* Instruction = &DecodedInstruction->Instruction;
 
@@ -62,8 +62,8 @@ ZyanBool __zyntercept_cdecl IsRet(
 }
 
 ZyanBool __zyntercept_cdecl IsCall(
-    __zyntercept_in ZydisDecoded *DecodedInstruction,
-    __zyntercept_out ZydisDecodedOperand **ImmediateOperand)
+    __zyntercept_in ZydisDecoded* DecodedInstruction,
+    __zyntercept_out ZydisDecodedOperand** ImmediateOperand)
 {
     ZydisDecodedOperand *FoundImmediateOperand = nullptr;
 
@@ -107,8 +107,8 @@ ZyanBool __zyntercept_cdecl IsCall(
 }
 
 ZyanBool __zyntercept_cdecl IsJcc(
-    __zyntercept_in ZydisDecoded *DecodedInstruction,
-    __zyntercept_out ZydisDecodedOperand **ImmediateOperand)
+    __zyntercept_in ZydisDecoded* DecodedInstruction,
+    __zyntercept_out ZydisDecodedOperand** ImmediateOperand)
 {
     ZydisDecodedOperand *FoundImmediateOperand = nullptr;
     ZyanBool IsProgramCounterDependent = ZYAN_FALSE;
@@ -181,8 +181,8 @@ ZyanBool __zyntercept_cdecl IsJcc(
 }
 
 ZyanBool __zyntercept_cdecl IsJmp(
-    __zyntercept_in ZydisDecoded *DecodedInstruction,
-    __zyntercept_out ZydisDecodedOperand **ImmediateOperand)
+    __zyntercept_in ZydisDecoded* DecodedInstruction,
+    __zyntercept_out ZydisDecodedOperand** ImmediateOperand)
 {
     ZydisDecodedOperand *FoundImmediateOperand = NULL;
 
@@ -236,7 +236,7 @@ ZyanBool __zyntercept_cdecl IsJmp(
 ZyanU64 __zyntercept_cdecl SizeOfDecodedDesiredInstructions(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
-    __zyntercept_in ZyanU8 *Buffer,
+    __zyntercept_in ZyanU8* Buffer,
     __zyntercept_in ZyanUSize BufferSize,
     __zyntercept_in ZyanU32 DesiredSize)
 {
@@ -282,13 +282,13 @@ ZyanU64 __zyntercept_cdecl SizeOfDecodedDesiredInstructions(
 ZyanBool __zyntercept_cdecl FindReplaceableInstructions(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
-    __zyntercept_in ZyanU8 *Buffer,
+    __zyntercept_in ZyanU8* Buffer,
     __zyntercept_in ZyanUSize BufferSize,
     __zyntercept_in ZyanU32 SizeOfDetour,
     __zyntercept_in ZyanU64 SizeOfDecodedBuffer,
-    __zyntercept_out ZydisDecoded *DecodedBuffer,
-    __zyntercept_out ZyanU64 *NumberOfFoundInstructions,
-    __zyntercept_out ZyanUSize *SizeOfFoundInstructions)
+    __zyntercept_out ZydisDecoded* DecodedBuffer,
+    __zyntercept_out ZyanU64* NumberOfFoundInstructions,
+    __zyntercept_out ZyanUSize* SizeOfFoundInstructions)
 {
     ZyanUSize SizeOfDecodedInstructions = 0;
     ZyanU64 SizeOfDecodedPrologue = 0;
@@ -348,13 +348,13 @@ ZyanBool __zyntercept_cdecl FindReplaceableInstructions(
 ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
-    __zyntercept_in ZyanU8 *Buffer,
+    __zyntercept_in ZyanU8* Buffer,
     __zyntercept_in ZyanUSize BufferSize,
     __zyntercept_in ZyanU64 BaseAddress,
-    __zyntercept_out ZydisDecoded *BranchInstruction,
-    __zyntercept_out ZyanU64 *InstructionAddress,
-    __zyntercept_out ZyanU64 *GreenBranchAddress,
-    __zyntercept_out ZyanU64 *RedBranchAddress)
+    __zyntercept_out ZydisDecoded* BranchInstruction,
+    __zyntercept_out ZyanU64* InstructionAddress,
+    __zyntercept_out ZyanU64* GreenBranchAddress,
+    __zyntercept_out ZyanU64* RedBranchAddress)
 {
     ZydisDecoder Decoder = {};
     ZydisDecoded Decoded = {};
@@ -424,8 +424,8 @@ ZyanBool __zyntercept_cdecl FindFunctionBranchs(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
     __zyntercept_in ZyanU64 BaseAddress,
-    __zyntercept_out ZydisBranch **FoundBranchs,
-    __zyntercept_out ZyanU64 *NumberOfFoundBranchs)
+    __zyntercept_out ZydisBranch** FoundBranchs,
+    __zyntercept_out ZyanU64* NumberOfFoundBranchs)
 {
     /* Size of buffer used to fetch new instructions in memory */
     /* TODO: Review this line and check if this value could be a function argument */
@@ -570,7 +570,7 @@ ZyanBool __zyntercept_cdecl HasFunctionBranchDestinationsBetween(
     __zyntercept_in ZyanU64 BeginAddress,
     __zyntercept_in ZyanU64 EndAddress)
 {
-    ZydisBranch *FoundBranchs = nullptr;
+    ZydisBranch* FoundBranchs = nullptr;
     ZyanU64 NumberOfFoundBranchs = 0;
 
     /* This function will follow all possible jumps in target function memory */

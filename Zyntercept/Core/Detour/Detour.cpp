@@ -30,14 +30,14 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 	ZyanUSize SizeOfFoundInstructions = 0;
 
 	ZynterceptPagedMemory Page = { 0 };
-	ZynterceptPagedMemoryOperation Request = { 0 };
+	ZynterceptPagedMemoryOperation Operation = { 0 };
 	ZynterceptPagedMemoryOperation Operations[2] = { 0 };
 
-	Request.Address = TargetFunction;
-	Request.Buffer = PrologueBuffer;
-	Request.Size = sizeof(PrologueBuffer);
+	Operation.Address = TargetFunction;
+	Operation.Buffer = PrologueBuffer;
+	Operation.Size = sizeof(PrologueBuffer);
 
-	if (!ZynterceptReadMemory(ProcessIdentifier, &Request))
+	if (!ZynterceptReadMemory(ProcessIdentifier, &Operation))
 	{
 		return ZYAN_FALSE;
 	}
@@ -204,21 +204,21 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 	ZydisMachineMode MachineMode = ZYDIS_MACHINE_MODE_LEGACY_32;
 	ZydisStackWidth StackWidth = ZYDIS_STACK_WIDTH_32;
 
-	ZyanU8 PrologueBuffer[64] = { 0 };
-	ZyanU8 TrampolineBuffer[128] = { 0 };
+	ZyanU8 PrologueBuffer[32] = { 0 };
+	ZyanU8 TrampolineBuffer[96] = { 0 };
 
 	ZyanU64 NumberOfFoundInstructions = 0;
 	ZyanUSize SizeOfFoundInstructions = 0;
 
 	ZynterceptPagedMemory Page = { 0 };
-	ZynterceptPagedMemoryOperation Request = { 0 };
+	ZynterceptPagedMemoryOperation Operation = { 0 };
 	ZynterceptPagedMemoryOperation Operations[2] = { 0 };
 
-	Request.Address = TargetFunction;
-	Request.Buffer = PrologueBuffer;
-	Request.Size = sizeof(PrologueBuffer);
+	Operation.Address = TargetFunction;
+	Operation.Buffer = PrologueBuffer;
+	Operation.Size = sizeof(PrologueBuffer);
 
-	if (!ZynterceptReadMemory(ProcessIdentifier, &Request))
+	if (!ZynterceptReadMemory(ProcessIdentifier, &Operation))
 	{
 		return ZYAN_FALSE;
 	}
@@ -235,7 +235,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		return ZYAN_FALSE;
 	}
 
-	ZydisDecoded* ReplaceableInstructions = (ZydisDecoded*)malloc(SizeOfDecodedInstructions);
+	ZydisDecoded* ReplaceableInstructions = (ZydisDecoded*)std::malloc(SizeOfDecodedInstructions);
 
 	if (!ReplaceableInstructions)
 	{
@@ -253,7 +253,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		&NumberOfFoundInstructions,
 		&SizeOfFoundInstructions))
 	{
-		free(ReplaceableInstructions);
+		std::free(ReplaceableInstructions);
 		return ZYAN_FALSE;
 	}
 
@@ -265,18 +265,18 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		TargetFunction + 1,
 		TargetFunction + SizeOfFoundInstructions))
 	{
-		free(ReplaceableInstructions);
+		std::free(ReplaceableInstructions);
 		return ZYAN_FALSE;
 	}
 
-	ZyanU8* OriginalPrologueBuffer = (ZyanU8*)malloc(SizeOfFoundInstructions);
+	ZyanU8* OriginalPrologueBuffer = (ZyanU8*)std::malloc(SizeOfFoundInstructions);
 
 	if (!OriginalPrologueBuffer) {
-		free(ReplaceableInstructions);
+		std::free(ReplaceableInstructions);
 		return ZYAN_FALSE;
 	}
 
-	memcpy(OriginalPrologueBuffer, PrologueBuffer, SizeOfFoundInstructions);
+	std::memcpy(OriginalPrologueBuffer, PrologueBuffer, SizeOfFoundInstructions);
 
 	ZyanU64 NearPageAddress = ZynterceptAllocateNearestAddress(
 		ProcessIdentifier,
@@ -287,7 +287,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 
 	if (!NearPageAddress)
 	{
-		free(ReplaceableInstructions);
+		std::free(ReplaceableInstructions);
 		return ZYAN_FALSE;
 	}
 
@@ -352,8 +352,8 @@ FAILURE:
 	Page.State = 0;
 	Page.Protection = 0;
 
-	free(ReplaceableInstructions);
-	free(OriginalPrologueBuffer);
+	std::free(ReplaceableInstructions);
+	std::free(OriginalPrologueBuffer);
 
 	ZYNTERCEPT_UNREFERENCED(ZynterceptReleaseMemory(ProcessIdentifier, &Page));
 
@@ -381,7 +381,7 @@ ZyanBool __zyntercept_cdecl ZynterceptRevertDetourFunction64(
 		return ZYAN_FALSE;
 	}
 
-	free(OriginalPrologue);
+	std::free(OriginalPrologue);
 
 	if (!ZynterceptReleaseMemory(ProcessIdentifier, &TrampolinePage)) {
 		return ZYAN_FALSE;
@@ -411,7 +411,7 @@ ZyanBool __zyntercept_cdecl ZynterceptRevertDetourFunction32(
 		return ZYAN_FALSE;
 	}
 
-	free(OriginalPrologue);
+	std::free(OriginalPrologue);
 
 	if (!ZynterceptReleaseMemory(ProcessIdentifier, &TrampolinePage)) {
 		return ZYAN_FALSE;
