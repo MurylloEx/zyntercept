@@ -109,6 +109,15 @@ target_link_libraries(Zyntercept PUBLIC
 # Target: Zyntercept_Tests
 if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
 	set(Zyntercept_Tests_SOURCES
+		"Tests/Core/Allocator/AllocatorTests.cpp"
+		"Tests/Core/Assembler/AssemblerTests.cpp"
+		"Tests/Core/Common/CommonTests.cpp"
+		"Tests/Core/Detour/DetourTests.cpp"
+		"Tests/Core/Disassembler/DisassemblerTests.cpp"
+		"Tests/Core/Syscall/Linux/LinuxTests.cpp"
+		"Tests/Core/Syscall/SyscallTests.cpp"
+		"Tests/Core/Syscall/Unix/UnixTests.cpp"
+		"Tests/Core/Syscall/Windows/WindowsTests.cpp"
 		"Tests/Core/tests.assembler.cpp"
 		"Tests/main.cpp"
 		cmake.toml
