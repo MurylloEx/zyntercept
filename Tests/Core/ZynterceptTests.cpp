@@ -23,7 +23,7 @@ TEST(Zytercept_Assembler_Tests, TestIfItWorks)
 {
     ZynterceptProcess process = { 0 };
 
-    process.Architecture = ZYNTERCEPT_ARCHITECTURE_64BIT;
+    process.Architecture = ZYNTERCEPT_ARCHITECTURE_32BIT;
     process.Identifier = GetCurrentProcess();
 
     ZynterceptTransactionBegin();
