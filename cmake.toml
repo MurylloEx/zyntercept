@@ -7,8 +7,6 @@ languages = ["C", "CXX"]
 [options]
 ZYNTERCEPT_BUILD_TESTS = false
 ZYNTERCEPT_BUILD_EXAMPLES = false
-INSTALL_GTEST = false
-BUILD_GMOCK = false
 
 [conditions]
 tests = "ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT"
@@ -18,10 +16,10 @@ examples = "ZYNTERCEPT_BUILD_EXAMPLES OR CMKR_ROOT_PROJECT"
 git = "https://github.com/zyantific/zydis"
 tag = "v4.0.0"
 
-[fetch-content.GTest]
+[fetch-content.Catch2]
 condition = "tests"
-git = "https://github.com/google/googletest"
-tag = "v1.14.0"
+git = "https://github.com/catchorg/Catch2"
+tag = "v3.6.0"
 
 [target.Zyntercept]
 type = "library"
@@ -35,5 +33,5 @@ condition = "tests"
 type = "executable"
 headers = ["Tests/**.h"]
 sources = ["Tests/**.cpp"]
-link-libraries = ["Zyntercept", "GTest::gtest"]
+link-libraries = ["Zyntercept", "Catch2"]
 include-directories = ["."]

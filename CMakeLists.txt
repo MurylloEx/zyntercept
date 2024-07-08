@@ -27,8 +27,6 @@ endif()
 # Options
 option(ZYNTERCEPT_BUILD_TESTS "" OFF)
 option(ZYNTERCEPT_BUILD_EXAMPLES "" OFF)
-option(INSTALL_GTEST "" OFF)
-option(BUILD_GMOCK "" OFF)
 
 project(zyntercept
 	LANGUAGES
@@ -56,14 +54,14 @@ FetchContent_Declare(Zydis SYSTEM
 FetchContent_MakeAvailable(Zydis)
 
 if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
-	message(STATUS "Fetching GTest (v1.14.0)...")
-	FetchContent_Declare(GTest SYSTEM
+	message(STATUS "Fetching Catch2 (v3.6.0)...")
+	FetchContent_Declare(Catch2 SYSTEM
 		GIT_REPOSITORY
-			"https://github.com/google/googletest"
+			"https://github.com/catchorg/Catch2"
 		GIT_TAG
-			v1.14.0
+			v3.6.0
 	)
-	FetchContent_MakeAvailable(GTest)
+	FetchContent_MakeAvailable(Catch2)
 
 endif()
 # Target: Zyntercept
@@ -118,7 +116,8 @@ if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
 		"Tests/Core/Syscall/SyscallTests.cpp"
 		"Tests/Core/Syscall/Unix/UnixTests.cpp"
 		"Tests/Core/Syscall/Windows/WindowsTests.cpp"
-		"Tests/Core/tests.assembler.cpp"
+		"Tests/Core/Trampoline/TrampolineTests.cpp"
+		"Tests/Core/ZynterceptTests.cpp"
 		"Tests/main.cpp"
 		cmake.toml
 	)
@@ -134,7 +133,7 @@ if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
 
 	target_link_libraries(Zyntercept_Tests PRIVATE
 		Zyntercept
-		GTest::gtest
+		Catch2
 	)
 
 	get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} DEFINITION VS_STARTUP_PROJECT)
