@@ -266,17 +266,23 @@ ZyanU64 __zyntercept_cdecl SizeOfDecodedDesiredInstructions(
             return 0;
         }
 
+        /* Check if instruction is a return */
+        if (Instruction.mnemonic == ZYDIS_MNEMONIC_RET) 
+        {
+            return 0;
+        }
+
         SizeOfDecodedPrologue += sizeof(ZydisDecoded);
         SizeOfDecodedInstructions += Instruction.length;
 
         /* If the prologue size is enought to our use case, get the size of decoded prologue */
         if (SizeOfDecodedInstructions >= DesiredSize)
         {
-            break;
+            return SizeOfDecodedPrologue;
         }
     }
 
-    return SizeOfDecodedPrologue;
+    return 0;
 }
 
 ZyanBool __zyntercept_cdecl FindReplaceableInstructions(
