@@ -1,6 +1,2 @@
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 #include <Zyntercept/Core/Trampoline/Trampoline.h>
-
-TEST(TrampolineTestSuite, TestName) {
-	ASSERT_EQ(0, 0);
-}
