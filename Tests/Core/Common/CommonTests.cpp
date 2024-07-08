@@ -1,25 +1,102 @@
-//#include <gtest/gtest.h>
-//#include <Zyntercept/Core/Common/Common.h>
-//
-//TEST(CommonTestSuite, CheckIfDifferenceMethodReturnCorrectValues) {
-//	bool DifferenceResult1 = Difference(0x7fffff, 0x847324);
-//	ASSERT_EQ(DifferenceResult1, -0x47325);
-//
-//	bool DifferenceResult2 = Difference(0x847324, 0x432444);
-//	ASSERT_EQ(DifferenceResult2, 0x414EE0);
-//
-//	bool DifferenceResult3 = Difference(0xffffffff, 0x84732400);
-//	ASSERT_EQ(DifferenceResult3, 0x7B8CDBFF);
-//
-//	bool DifferenceResult4 = Difference(0xffffffffffffffff, 0xffffffffffffffff);
-//	ASSERT_EQ(DifferenceResult4, 0);
-//
-//	bool DifferenceResult5 = Difference(0x7fffffffffffffff, 0x7fffffffffffffff);
-//	ASSERT_EQ(DifferenceResult5, 0);
-//
-//	bool DifferenceResult6 = Difference(0x8000000000000000, 0x7fffffffffffffff);
-//	ASSERT_EQ(DifferenceResult6, 1);
-//
-//	bool DifferenceResult7 = Difference(0x7fffff, 0x7ffffe);
-//	ASSERT_EQ(DifferenceResult7, -1);
-//}
+#include <catch2/catch_test_macros.hpp>
+#include <Zyntercept/Core/Common/Common.h>
+
+SCENARIO("Testing the Difference function", "[difference]") 
+{
+    GIVEN("Two unsigned numbers where the first is greater than the second") 
+    {
+        ZyanU64 a = 0x84732400ULL;
+        ZyanU64 b = 0x43244431ULL;
+
+        WHEN("I call the Difference function")
+        {
+            THEN("It should return a positive result")
+            {
+                REQUIRE(Difference(a, b) == 0x414EDFCFLL);
+            }
+        }
+    }
+
+    GIVEN("Two unsigned numbers where the first is less than the second") 
+    {
+        ZyanU64 a = 0x7fffffffULL;
+        ZyanU64 b = 0x84732400ULL;
+
+        WHEN("I call the Difference function") 
+        {
+            THEN("It should return a negative result") 
+            {
+                REQUIRE(Difference(a, b) == -0x4732401LL);
+            }
+        }
+    }
+
+    GIVEN("Two unsigned numbers where both numbers are equal") 
+    {
+        ZyanU64 a = 0x7fffffffULL;
+        ZyanU64 b = 0x7fffffffULL;
+
+        WHEN("I call the Difference function") 
+        {
+            THEN("It should return zero") {
+                REQUIRE(Difference(a, b) == 0x00000000ULL);
+            }
+        }
+    }
+
+    GIVEN("Two zero values") 
+    {
+        ZyanU64 a = 0x00000000ULL;
+        ZyanU64 b = 0x00000000ULL;
+
+        WHEN("I call the Difference function") 
+        {
+            THEN("It should return zero") 
+            {
+                REQUIRE(Difference(a, b) == 0x00000000ULL);
+            }
+        }
+    }
+
+    GIVEN("Two negative numbers represented as unsigned") 
+    {
+        ZyanU64 a = static_cast<ZyanU64>(-0x00001000LL);
+        ZyanU64 b = static_cast<ZyanU64>(-0x00000800LL);
+
+        WHEN("I call the Difference function") 
+        {
+            THEN("It should return a positive result") 
+            {
+                REQUIRE(Difference(a, b) == -0x00000800LL);
+            }
+        }
+    }
+
+    GIVEN("Two unsigned numbers causing positive overflow") 
+    {
+        constexpr ZyanU64 a = std::numeric_limits<ZyanU64>::max();
+        constexpr ZyanU64 b = 0x00000000ULL;
+
+        WHEN("I call the Difference function") 
+        {
+            THEN("It should handle the maximum value without overflow") 
+            {
+                REQUIRE(Difference(a, b) == static_cast<ZyanI64>(std::numeric_limits<ZyanU64>::max()));
+            }
+        }
+    }
+
+    GIVEN("Two unsigned numbers causing negative overflow") 
+    {
+        constexpr ZyanU64 a = 0x00000000ULL;
+        constexpr ZyanU64 b = std::numeric_limits<ZyanU64>::max();
+
+        WHEN("I call the Difference function") 
+        {
+            THEN("It should handle the minimum value without underflow") 
+            {
+                REQUIRE(Difference(a, b) == static_cast<ZyanI64>(0x00000000ULL) - static_cast<ZyanI64>(std::numeric_limits<ZyanU64>::max()));
+            }
+        }
+    }
+}
