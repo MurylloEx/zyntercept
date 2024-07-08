@@ -1,8 +1,5 @@
 #include <Zyntercept/Core/Allocator/Allocator.h>
 
-#define ZYNTERCEPT_MAXIMUM_MEMORY_RANGE 0x40000000
-#define ZYNTERCEPT_IS_POINTER_BETWEEN(P, MAX, MIN) ((P < MAX) && (P > MIN))
-
 ZyanU64 __zyntercept_cdecl ZynterceptAllocateNearLowerPage(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
     __zyntercept_in ZyanU64 Address,
