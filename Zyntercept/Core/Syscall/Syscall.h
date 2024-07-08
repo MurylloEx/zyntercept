@@ -4,6 +4,8 @@
 #if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #include <Zyntercept/Core/Syscall/Windows/Windows.h>
 
+#define ZYNTERCEPT_WINDOWS
+
 #define ZynterceptIs64BitSystem ZynterceptIs64BitSystemWindows
 #define ZynterceptIs32BitSystem ZynterceptIs32BitSystemWindows
 #define ZynterceptIs32BitProcess ZynterceptIs32BitProcessWindows
@@ -23,6 +25,8 @@
 #elif defined(__linux__)
 #include <Zyntercept/Core/Syscall/Linux/Linux.h>
 
+#define ZYNTERCEPT_LINUX
+
 #define ZynterceptIs64BitSystem ZynterceptIs64BitSystemLinux
 #define ZynterceptIs32BitSystem ZynterceptIs32BitSystemLinux
 #define ZynterceptIs32BitProcess ZynterceptIs32BitProcessLinux
@@ -41,6 +45,8 @@
 
 #elif defined(unix) || defined(__unix__) || defined(__unix)
 #include <Zyntercept/Core/Syscall/Unix/Unix.h>
+
+#define ZYNTERCEPT_UNIX
 
 #define ZynterceptIs64BitSystem ZynterceptIs64BitSystemUnix
 #define ZynterceptIs32BitSystem ZynterceptIs32BitSystemUnix
