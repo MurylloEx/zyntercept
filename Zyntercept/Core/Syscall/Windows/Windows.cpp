@@ -445,10 +445,14 @@ ZyanBool __zyntercept_cdecl ZynterceptQueryMemoryWindows(
 		return ZYAN_FALSE;
 	}
 
-	Page->Address = (ZyanU64)MemoryInfo.AllocationBase;
-	Page->Size = (ZyanU64)MemoryInfo.RegionSize;
 	Page->State = 0;
 	Page->Protection = 0;
+	Page->Size = (ZyanU64)MemoryInfo.RegionSize;
+	Page->Address = (ZyanU64)MemoryInfo.AllocationBase;
+
+	if (!Page->Address) {
+		Page->Address = (ZyanU64)MemoryInfo.BaseAddress;
+	}
 
 	MemoryInfo.Protect = MemoryInfo.Protect & ~PAGE_GUARD;
 	MemoryInfo.Protect = MemoryInfo.Protect & ~PAGE_NOCACHE;
