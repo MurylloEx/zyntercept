@@ -433,7 +433,7 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 		0x48, 0x8D, 0x0C, 0x80,                     // 0x10007 | lea rcx,qword ptr ds:[rax+rax*4]
 		0x48, 0x8B, 0x05, 0xA6, 0x8B, 0x03, 0x00,   // 0x1000B | mov rax,qword ptr ds:[0x1030B]
 		0x48, 0x8D, 0x04, 0xC8,                     // 0x10012 | lea rax,qword ptr ds:[rax+rcx*8]
-		0x48, 0x05,	0xA4, 0x03, 0x00, 0x00,         // 0x10016 | add rax,3A4
+		0x48, 0x05, 0xA4, 0x03, 0x00, 0x00,         // 0x10016 | add rax,3A4
 		0xC3,                                       // 0x1001C | ret
 		0xCC,                                       // 0x1001D | int3
 		0x33, 0xC0,                                 // 0x1001E | xor eax,eax
@@ -462,4 +462,24 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 	REQUIRE(InstructionAddress == BaseAddress + 0x03);
 	REQUIRE(GreenBranchAddress == BaseAddress + 0x1e);
 	REQUIRE(RedBranchAddress == BaseAddress + 0x05);
+}
+
+TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x86 real function", "[disassembler]") {
+	SKIP();
+}
+
+TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x64 real function", "[disassembler]") {
+	SKIP();
+}
+
+TEST_CASE("Check if FindFunctionBranchs not find the all branchs correctly in an invalid function", "[disassembler]") {
+	SKIP();
+}
+
+TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a x86 real function", "[disassembler]") {
+	SKIP();
+}
+
+TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a x64 real function", "[disassembler]") {
+	SKIP();
 }
