@@ -1,16 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
+#include <Zyntercept/Core/Syscall/Syscall.h>
 #include <Zyntercept/Core/Disassembler/Disassembler.h>
 
-//IsRelative();
-//IsRet();
-//IsCall();
-//IsJmp();
-//IsJcc();
-//SizeOfDecodedDesiredInstructions();
-//FindReplaceableInstructions();
-//FindNextFunctionBranch();
-//FindFunctionBranchs();
-//HasFunctionBranchDestinationsBetween();
+#if defined(ZYNTERCEPT_WINDOWS)
+#include <Windows.h>
+#endif
 
 static int __cdecl Fibonacci(int n)
 {
@@ -448,8 +442,8 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 	ZyanU64 RedBranchAddress = 0;
 
 	ZyanBool Status = FindNextFunctionBranch(
-		ZYDIS_MACHINE_MODE_LEGACY_32,
-		ZYDIS_STACK_WIDTH_32,
+		ZYDIS_MACHINE_MODE_LONG_64,
+		ZYDIS_STACK_WIDTH_64,
 		Buffer,
 		sizeof(Buffer),
 		BaseAddress,
@@ -465,21 +459,235 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 }
 
 TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x86 real function", "[disassembler]") {
-	SKIP();
+	uint8_t Buffer[] = {
+		0x83, 0xF8, 0x01,              // 0x10000 | cmp eax, 1          ; Compare n with 1
+		0x76, 0x14,                    // 0x10003 | jbe 0x10019         ; If n <= 1, jump to base_case (0x10019)
+		0x53,                          // 0x10005 | push ebx            ; Save ebx on the stack
+		0x89, 0xC3,                    // 0x10006 | mov ebx, eax        ; Copy n to ebx
+		0x48,                          // 0x10008 | dec eax             ; Decrement n (n-1)
+		0xE8, 0xF1, 0xFF, 0xFF, 0xFF,  // 0x10009 | call 0x10000        ; Call fibonacci (address 0x10000)
+		0x50,                          // 0x1000E | push eax            ; Save the result on the stack
+		0x89, 0xD8,                    // 0x1000F | mov eax, ebx        ; Restore n to eax
+		0x83, 0xE8, 0x02,              // 0x10011 | sub eax, 2          ; Decrement n by 2 (n-2)
+		0xE8, 0xE7, 0xFF, 0xFF, 0xFF,  // 0x10014 | call 0x10000        ; Call fibonacci (address 0x10000)
+		0x5B,                          // 0x10019 | pop ebx             ; Retrieve fibonacci(n-1) from ebx
+		0x01, 0xD8,                    // 0x1001A | add eax, ebx        ; Add fibonacci(n-1) + fibonacci(n-2)
+		0x5B,                          // 0x1001C | pop ebx             ; Restore ebx from the stack
+		0xC3,                          // 0x1001D | ret                 ; Return
+		0xB8, 0x01, 0x00, 0x00, 0x00,  // 0x1001E | mov eax, 1          ; Set Fibonacci(1) or Fibonacci(0) to 1
+		0xC3                           // 0x10023 | ret                 ; Return
+	};
+
+#if defined(ZYNTERCEPT_WINDOWS)
+	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
+
+	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZydisBranch* FoundBranchs = nullptr;
+	ZyanU64 NumberOfFoundBranchs = 0;
+
+	ZyanBool Status = FindFunctionBranchs(
+		ProcessIdentifier,
+		ZYDIS_MACHINE_MODE_LEGACY_32,
+		ZYDIS_STACK_WIDTH_32,
+		BaseAddress,
+		&FoundBranchs,
+		&NumberOfFoundBranchs);
+
+	REQUIRE(Status == ZYAN_TRUE);
+	REQUIRE(NumberOfFoundBranchs == 2);
+	REQUIRE(FoundBranchs != nullptr);
+
+	for (ZyanU64 Offset = 0; Offset < NumberOfFoundBranchs; Offset++) {
+		ZydisBranch* Branch = &FoundBranchs[Offset];
+
+		if (Branch->Flow == ZYDIS_BRANCH_FLOW_GREEN) {
+			REQUIRE(Branch->Mnemonic == ZYDIS_MNEMONIC_JBE);
+			REQUIRE(Branch->Address == BaseAddress + 0x03);
+			REQUIRE(Branch->Destination == BaseAddress + 0x19);
+		}
+
+		if (Branch->Flow == ZYDIS_BRANCH_FLOW_RED) {
+			REQUIRE(Branch->Mnemonic == ZYDIS_MNEMONIC_JBE);
+			REQUIRE(Branch->Address == BaseAddress + 0x03);
+			REQUIRE(Branch->Destination == BaseAddress + 0x05);
+		}
+	}
+
+	free(FoundBranchs);
 }
 
 TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x64 real function", "[disassembler]") {
-	SKIP();
+	uint8_t Buffer[] = {
+		0x53,                                      // 0x10000 | push rbx            ; Save rbx on the stack
+		0x48, 0x83, 0xFF, 0x01,                    // 0x10001 | cmp rdi, 1          ; Compare n with 1
+		0x76, 0x21,                                // 0x10005 | jbe 0x10028         ; If n <= 1, jump to base_case (offset 0x10028)
+		0x48, 0x89, 0xDF,                          // 0x10007 | mov rbx, rdi        ; Copy n to rbx
+		0x48, 0xFF, 0xCF,                          // 0x1000A | dec rdi             ; Decrement n (n-1)
+		0xE8, 0xF1, 0xFF, 0xFF, 0xFF,              // 0x1000D | call 0x10003        ; Call fibonacci (address 0x10003)
+		0x50,                                      // 0x10012 | push rax            ; Save the result on the stack
+		0x48, 0x89, 0xDF,                          // 0x10013 | mov rdi, rbx        ; Restore n to rdi
+		0x48, 0x83, 0xEF, 0x02,                    // 0x10016 | sub rdi, 2          ; Decrement n by 2 (n-2)
+		0xE8, 0xE7, 0xFF, 0xFF, 0xFF,              // 0x1001A | call 0x10003        ; Call fibonacci (address 0x10003)
+		0x5B,                                      // 0x1001F | pop rbx             ; Retrieve fibonacci(n-1) from rbx
+		0x48, 0x01, 0xD8,                          // 0x10020 | add rax, rbx        ; Add fibonacci(n-1) + fibonacci(n-2)
+		0x5B,                                      // 0x10023 | pop rbx             ; Restore rbx from the stack
+		0xC3,                                      // 0x10024 | ret                 ; Return
+		0x48, 0xC7, 0xC0, 0x01, 0x00, 0x00, 0x00,  // 0x10025 | mov rax, 1          ; Set Fibonacci(1) or Fibonacci(0) to 1
+		0xC3                                       // 0x1002C | ret                 ; Return
+	};
+
+#if defined(ZYNTERCEPT_WINDOWS)
+	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
+
+	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZydisBranch* FoundBranchs = nullptr;
+	ZyanU64 NumberOfFoundBranchs = 0;
+
+	ZyanBool Status = FindFunctionBranchs(
+		ProcessIdentifier,
+		ZYDIS_MACHINE_MODE_LONG_64,
+		ZYDIS_STACK_WIDTH_64,
+		BaseAddress,
+		&FoundBranchs,
+		&NumberOfFoundBranchs);
+
+	REQUIRE(Status == ZYAN_TRUE);
+	REQUIRE(NumberOfFoundBranchs == 2);
+	REQUIRE(FoundBranchs != nullptr);
+
+	for (ZyanU64 Offset = 0; Offset < NumberOfFoundBranchs; Offset++) {
+		ZydisBranch* Branch = &FoundBranchs[Offset];
+
+		if (Branch->Flow == ZYDIS_BRANCH_FLOW_GREEN) {
+			REQUIRE(Branch->Mnemonic == ZYDIS_MNEMONIC_JBE);
+			REQUIRE(Branch->Address == BaseAddress + 0x05);
+			REQUIRE(Branch->Destination == BaseAddress + 0x28);
+		}
+
+		if (Branch->Flow == ZYDIS_BRANCH_FLOW_RED) {
+			REQUIRE(Branch->Mnemonic == ZYDIS_MNEMONIC_JBE);
+			REQUIRE(Branch->Address == BaseAddress + 0x05);
+			REQUIRE(Branch->Destination == BaseAddress + 0x07);
+		}
+	}
+
+	free(FoundBranchs);
 }
 
-TEST_CASE("Check if FindFunctionBranchs not find the all branchs correctly in an invalid function", "[disassembler]") {
-	SKIP();
+TEST_CASE("Check if FindFunctionBranchs not find the all branchs correctly in a function without jumps", "[disassembler]") {
+	uint8_t Buffer[] = {
+		0x55,                                // 0x10000 | push rbp              ; Save base pointer
+		0x48, 0x89, 0xE5,                    // 0x10001 | mov rbp, rsp          ; Set base pointer to stack pointer
+		0x48, 0x89, 0x7D, 0xF8,              // 0x10004 | mov [rbp-8], rdi      ; Store a in [rbp-8]
+		0x48, 0x89, 0x75, 0xF0,              // 0x10008 | mov [rbp-16], rsi     ; Store x in [rbp-16]
+		0x48, 0x89, 0x55, 0xE8,              // 0x1000C | mov [rbp-24], rdx     ; Store b in [rbp-24]
+		0x48, 0x8B, 0x45, 0xF8,              // 0x10010 | mov rax, [rbp-8]      ; Move a to rax
+		0x48, 0x0F, 0xAF, 0x45, 0xF0,        // 0x10014 | imul rax, [rbp-16]    ; Multiply rax (a) by x
+		0x48, 0x03, 0x45, 0xE8,              // 0x10019 | add rax, [rbp-24]     ; Add b to rax
+		0x48, 0x89, 0xEC,                    // 0x1001D | mov rsp, rbp          ; Restore stack pointer
+		0x5D,                                // 0x10020 | pop rbp               ; Restore base pointer
+		0xC3                                 // 0x10021 | ret                   ; Return
+	};
+
+#if defined(ZYNTERCEPT_WINDOWS)
+	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
+
+	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZydisBranch* FoundBranchs = nullptr;
+	ZyanU64 NumberOfFoundBranchs = 0;
+
+	ZyanBool Status = FindFunctionBranchs(
+		ProcessIdentifier,
+		ZYDIS_MACHINE_MODE_LONG_64,
+		ZYDIS_STACK_WIDTH_64,
+		BaseAddress,
+		&FoundBranchs,
+		&NumberOfFoundBranchs);
+
+	REQUIRE(Status == ZYAN_FALSE);
+	REQUIRE(NumberOfFoundBranchs == 0);
+	REQUIRE(FoundBranchs == nullptr);
 }
 
 TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a x86 real function", "[disassembler]") {
-	SKIP();
+	// TODO: Review all memory addresses in comments of right side
+	uint8_t Buffer[] = {
+		0x83, 0xF8, 0x01,              // 0x10000 | cmp eax, 1          ; Compare n with 1
+		0x76, 0x14,                    // 0x10003 | jbe 0x10019         ; If n <= 1, jump to base_case (0x10019)
+		0x53,                          // 0x10005 | push ebx            ; Save ebx on the stack
+		0x89, 0xC3,                    // 0x10006 | mov ebx, eax        ; Copy n to ebx
+		0x48,                          // 0x10008 | dec eax             ; Decrement n (n-1)
+		0xE8, 0xF1, 0xFF, 0xFF, 0xFF,  // 0x10009 | call 0x10000        ; Call fibonacci (address 0x10000)
+		0x50,                          // 0x1000E | push eax            ; Save the result on the stack
+		0x89, 0xD8,                    // 0x1000F | mov eax, ebx        ; Restore n to eax
+		0x83, 0xE8, 0x02,              // 0x10011 | sub eax, 2          ; Decrement n by 2 (n-2)
+		0xE8, 0xE7, 0xFF, 0xFF, 0xFF,  // 0x10014 | call 0x10000        ; Call fibonacci (address 0x10000)
+		0x5B,                          // 0x10019 | pop ebx             ; Retrieve fibonacci(n-1) from ebx
+		0x01, 0xD8,                    // 0x1001A | add eax, ebx        ; Add fibonacci(n-1) + fibonacci(n-2)
+		0x5B,                          // 0x1001C | pop ebx             ; Restore ebx from the stack
+		0xC3,                          // 0x1001D | ret                 ; Return
+		0xB8, 0x01, 0x00, 0x00, 0x00,  // 0x1001E | mov eax, 1          ; Set Fibonacci(1) or Fibonacci(0) to 1
+		0xC3                           // 0x10023 | ret                 ; Return
+	};
+
+#if defined(ZYNTERCEPT_WINDOWS)
+	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
+
+	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZyanU64 BeginAddress = BaseAddress + 0x19;
+	ZyanU64 EndAddress = BaseAddress + 0x19;
+
+	ZyanBool Status = HasFunctionBranchDestinationsBetween(
+		ProcessIdentifier,
+		ZYDIS_MACHINE_MODE_LEGACY_32,
+		ZYDIS_STACK_WIDTH_32,
+		BaseAddress,
+		BeginAddress,
+		EndAddress);
+
+	REQUIRE(Status == ZYAN_TRUE);
 }
 
 TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a x64 real function", "[disassembler]") {
-	SKIP();
+	// TODO: Review all memory addresses in comments of right side
+	uint8_t Buffer[] = {
+		0x53,                                      // 0x10000 | push rbx            ; Save rbx on the stack
+		0x48, 0x83, 0xFF, 0x01,                    // 0x10001 | cmp rdi, 1          ; Compare n with 1
+		0x76, 0x21,                                // 0x10005 | jbe 0x10028         ; If n <= 1, jump to base_case (offset 0x10028)
+		0x48, 0x89, 0xDF,                          // 0x10007 | mov rbx, rdi        ; Copy n to rbx
+		0x48, 0xFF, 0xCF,                          // 0x1000A | dec rdi             ; Decrement n (n-1)
+		0xE8, 0xF1, 0xFF, 0xFF, 0xFF,              // 0x1000D | call 0x10003        ; Call fibonacci (address 0x10003)
+		0x50,                                      // 0x10012 | push rax            ; Save the result on the stack
+		0x48, 0x89, 0xDF,                          // 0x10013 | mov rdi, rbx        ; Restore n to rdi
+		0x48, 0x83, 0xEF, 0x02,                    // 0x10016 | sub rdi, 2          ; Decrement n by 2 (n-2)
+		0xE8, 0xE7, 0xFF, 0xFF, 0xFF,              // 0x1001A | call 0x10003        ; Call fibonacci (address 0x10003)
+		0x5B,                                      // 0x1001F | pop rbx             ; Retrieve fibonacci(n-1) from rbx
+		0x48, 0x01, 0xD8,                          // 0x10020 | add rax, rbx        ; Add fibonacci(n-1) + fibonacci(n-2)
+		0x5B,                                      // 0x10023 | pop rbx             ; Restore rbx from the stack
+		0xC3,                                      // 0x10024 | ret                 ; Return
+		0x48, 0xC7, 0xC0, 0x01, 0x00, 0x00, 0x00,  // 0x10025 | mov rax, 1          ; Set Fibonacci(1) or Fibonacci(0) to 1
+		0xC3                                       // 0x1002C | ret                 ; Return
+	};
+
+#if defined(ZYNTERCEPT_WINDOWS)
+	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
+
+	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZyanU64 BeginAddress = BaseAddress + 0x28;
+	ZyanU64 EndAddress = BaseAddress + 0x28;
+
+	ZyanBool Status = HasFunctionBranchDestinationsBetween(
+		ProcessIdentifier, 
+		ZYDIS_MACHINE_MODE_LONG_64, 
+		ZYDIS_STACK_WIDTH_64, 
+		BaseAddress, 
+		BeginAddress,
+		EndAddress);
+
+	REQUIRE(Status == ZYAN_TRUE);
 }
