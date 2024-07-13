@@ -544,6 +544,10 @@ ZyanBool __zyntercept_cdecl FindFunctionBranchs(
         }
     }
 
+    if (Branchs.empty()) {
+        goto FAILURE;
+    }
+
     *FoundBranchs = (ZydisBranch*)calloc(Branchs.size(), sizeof(ZydisBranch));
     *NumberOfFoundBranchs = Branchs.size();
 
