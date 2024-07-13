@@ -6,16 +6,6 @@
 #include <Windows.h>
 #endif
 
-static int __cdecl Fibonacci(int n)
-{
-	if (n <= 1) {
-		return n;
-	}
-
-	return Fibonacci(n - 1) + Fibonacci(n - 2);
-}
-
-
 TEST_CASE("Check if IsRelative recognize <jmp dword ptr 0xaabbccd9> as relative instruction", "[disassembler]") {
 	uint8_t Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
 
