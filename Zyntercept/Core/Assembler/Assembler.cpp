@@ -196,7 +196,7 @@ void AssemblyBuilder::Jmp64(ZyanU64 Address) {
     Buffer.insert(Buffer.end(), std::begin(InstructionBuffer), std::begin(InstructionBuffer) + InstructionLength);
     Buffer.insert(Buffer.end(), std::begin(PointerBuffer), std::end(PointerBuffer));
 
-    this->InstructionLength = InstructionLength;
+    this->InstructionLength = static_cast<ZyanU64>(Buffer.size()) * sizeof(ZyanU8);
     this->EncodedBuffer.insert(this->EncodedBuffer.end(), Buffer.begin(), Buffer.end());
 }
 
@@ -279,7 +279,7 @@ void AssemblyBuilder::Call64(ZyanU64 Address) {
     Buffer.insert(Buffer.end(), std::begin(InstructionBuffer), std::begin(InstructionBuffer) + InstructionLength);
     Buffer.insert(Buffer.end(), std::begin(PointerBuffer), std::end(PointerBuffer));
 
-    this->InstructionLength = InstructionLength;
+    this->InstructionLength = static_cast<ZyanU64>(Buffer.size()) * sizeof(ZyanU8);
     this->EncodedBuffer.insert(this->EncodedBuffer.end(), Buffer.begin(), Buffer.end());
 }
 
@@ -381,5 +381,5 @@ ZyanBool AssemblyBuilder::Failed() const {
 }
 
 ZyanBool AssemblyBuilder::Success() const {
-    return this->HasErrors == false;
+    return this->HasErrors ? ZYAN_FALSE : ZYAN_TRUE;
 }
