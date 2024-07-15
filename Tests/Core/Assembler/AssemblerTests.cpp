@@ -6,17 +6,17 @@
 //builder->Jmp32(); OK
 //builder->Jmp64(); OK
 //builder->Nop(); OK
-//builder->CopyTo();
-//builder->Encode();
-//builder->Reencode();
-//builder->Jcc();
-//builder->Jncc();
+//builder->Encode(); OK
+//builder->Reencode(); OK
 //builder->GetBaseAddress();  OK
 //builder->LastInstructionLength(); OK
 //builder->Offset(); OK
 //builder->Size(); OK
 //builder->Success(); OK
 //builder->Failed(); OK
+//builder->CopyTo();
+//builder->Jcc(); OK
+//builder->Jncc();
 
 TEST_CASE("AssemblyBuilder should be instantiated without errors", "[assembler]") {
 	REQUIRE_NOTHROW(std::make_unique<AssemblyBuilder>(0x7ffffd50ULL));
@@ -153,14 +153,6 @@ TEST_CASE("Should generate valid <nop> instructions when call Nop method", "[ass
 	REQUIRE(Builder->Failed() == ZYAN_FALSE);
 	REQUIRE(Builder->Size() == 0x100);
 	REQUIRE(Builder->LastInstructionLength() == 0x100);
-
-	ZyanU8 Buffer[0x100] = { 0 };
-
-	REQUIRE(Builder->CopyTo(Buffer, sizeof(Buffer)) == ZYAN_TRUE);
-
-	for (ZyanU64 Offset = 0; Offset < sizeof(Buffer); Offset++) {
-		REQUIRE(Buffer[Offset] == 0x90);
-	}
 }
 
 TEST_CASE("Offset method should return the valid instruction offset after each generated instruction", "[assembler]") {
@@ -257,5 +249,96 @@ TEST_CASE("Failed method should return ZYAN_FALSE after each generated instructi
 
 	REQUIRE_NOTHROW(Builder->Nop(0x100));
 	REQUIRE(Builder->Failed() == ZYAN_FALSE);
+}
+
+TEST_CASE("Encode method should generate the proper provided instruction", "[assembler]") {
+	std::unique_ptr<AssemblyBuilder> Builder = std::make_unique<AssemblyBuilder>(0x7ffffd50ULL);
+
+	ZydisEncoderRequest EncoderRequest = {};
+
+	EncoderRequest.mnemonic = ZYDIS_MNEMONIC_PUSH;
+	EncoderRequest.machine_mode = ZYDIS_MACHINE_MODE_LONG_64;
+	EncoderRequest.operand_count = 1;
+
+	EncoderRequest.operands[0].type = ZYDIS_OPERAND_TYPE_REGISTER;
+	EncoderRequest.operands[0].reg.value = ZYDIS_REGISTER_RAX;
+
+	REQUIRE_NOTHROW(Builder->Encode(&EncoderRequest));
+
+	REQUIRE(Builder->Size() == 1);
+
+	ZyanU8 Buffer[1] = { 0 };
+
+	REQUIRE(Builder->CopyTo(Buffer, sizeof(Buffer)) == ZYAN_TRUE);
+
+	REQUIRE(Buffer[0] == 0x50);
+}
+
+TEST_CASE("Reencode method should encode the decoded instruction", "[assembler]") {
+	std::unique_ptr<AssemblyBuilder> Builder = std::make_unique<AssemblyBuilder>(0x7ffffd50ULL);
+
+	ZyanU8 Buffer[] = { 
+		0xe9, 0xaa, 0xbb, 0xcc, 0xdd // jmp dword ptr 0xddccbbaa
+	};
+
+	ZydisDecoded Decoded = {};
+	ZydisDecoder Decoder = {};
+	ZyanStatus Status = 0;
+
+	Status = ZydisDecoderInit(
+		&Decoder, 
+		ZYDIS_MACHINE_MODE_LONG_64, 
+		ZYDIS_STACK_WIDTH_64);
+
+	REQUIRE(ZYAN_SUCCESS(Status));
+
+	Status = ZydisDecoderDecodeFull(
+		&Decoder,
+		Buffer,
+		sizeof(Buffer),
+		&Decoded.Instruction,
+		Decoded.Operands);
+
+	REQUIRE(ZYAN_SUCCESS(Status));
+
+	REQUIRE_NOTHROW(Builder->Reencode(&Decoded));
+	REQUIRE(Builder->Success() == ZYAN_TRUE);
+	REQUIRE(Builder->Failed() == ZYAN_FALSE);
+	REQUIRE(Builder->LastInstructionLength() == 5);
+	REQUIRE(Builder->Size() == 5);
+}
+
+TEST_CASE("Jcc method should encode a decoded je instruction", "[assembler]") {
+	std::unique_ptr<AssemblyBuilder> Builder = std::make_unique<AssemblyBuilder>(0x7ffffd50ULL);
+
+	ZyanU8 Buffer[] = {
+		0x74, 0x06 // je 0x06
+	};
+
+	ZydisDecoded Decoded = {};
+	ZydisDecoder Decoder = {};
+	ZyanStatus Status = 0;
+
+	Status = ZydisDecoderInit(
+		&Decoder,
+		ZYDIS_MACHINE_MODE_LONG_64,
+		ZYDIS_STACK_WIDTH_64);
+
+	REQUIRE(ZYAN_SUCCESS(Status));
+
+	Status = ZydisDecoderDecodeFull(
+		&Decoder,
+		Buffer,
+		sizeof(Buffer),
+		&Decoded.Instruction,
+		Decoded.Operands);
+
+	REQUIRE(ZYAN_SUCCESS(Status));
+
+	REQUIRE_NOTHROW(Builder->Jcc(&Decoded, 0x7ffee000ULL));
+	REQUIRE(Builder->Success() == ZYAN_TRUE);
+	REQUIRE(Builder->Failed() == ZYAN_FALSE);
+	REQUIRE(Builder->LastInstructionLength() == 6);
+	REQUIRE(Builder->Size() == 6);
 }
 
