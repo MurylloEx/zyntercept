@@ -22,7 +22,7 @@ void AssemblyBuilder::Jcc(ZydisDecoded* Reference, ZyanU64 Address) {
     ZyanI64 Displacement = Difference(Address, this->BaseAddress + Reference->Instruction.length);
 
     /* Check if is bigger than 2^7 - 1 or lower than -2^7 to not overflow the signed int8 value */
-    if (((ZyanI64)0x7f < Displacement) || (Displacement < (ZyanI64)(-0x80))) {
+    if ((0x7fffffffLL < Displacement) || (Displacement < -0x80000000LL)) {
         this->HasErrors = true;
         return;
     }
@@ -49,7 +49,10 @@ void AssemblyBuilder::Jcc(ZydisDecoded* Reference, ZyanU64 Address) {
         }
     }
 
-    Instruction.operand_size_hint = ZYDIS_OPERAND_SIZE_HINT_8;
+    Instruction.branch_type = ZYDIS_BRANCH_TYPE_NEAR;
+    Instruction.branch_width = ZYDIS_BRANCH_WIDTH_32;
+    Instruction.address_size_hint = ZYDIS_ADDRESS_SIZE_HINT_32;
+    Instruction.operand_size_hint = ZYDIS_OPERAND_SIZE_HINT_32;
 
     if (ZYAN_FAILED(ZydisEncoderEncodeInstruction(&Instruction, &InstructionBuffer, &InstructionLength))) {
         this->HasErrors = true;
@@ -208,7 +211,7 @@ void AssemblyBuilder::Jmp32(ZyanU64 Address) {
     ZyanI64 Displacement = Difference(Address, this->BaseAddress + 5); // Target - (Source + SizeOfJump)
 
     /* Check if is bigger than 2^31 - 1 or lower than -2^31 to not overflow the signed int32 value */
-    if (((ZyanI64)0x7fffffff < Displacement) || (Displacement < (ZyanI64)(-0x7fffffff))) {
+    if ((0x7fffffffLL < Displacement) || (Displacement < -0x80000000LL)) {
         this->HasErrors = true;
         return;
     }
@@ -291,7 +294,7 @@ void AssemblyBuilder::Call32(ZyanU64 Address) {
     ZyanUSize InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;
 
     /* Check if is bigger than 2^31 - 1 or lower than -2^31 to not overflow the signed int32 value */
-    if (((ZyanI64)0x7fffffff < Displacement) || (Displacement < (ZyanI64)(-0x7fffffff))) {
+    if ((0x7fffffffLL < Displacement) || (Displacement < -0x80000000LL)) {
         this->HasErrors = true;
         return;
     }
@@ -313,8 +316,32 @@ void AssemblyBuilder::Call32(ZyanU64 Address) {
 }
 
 void AssemblyBuilder::Nop(ZyanU64 SizeOfBlock) {
-    for (ZyanU64 Offset = 0; Offset < SizeOfBlock; Offset++) {
-        this->EncodedBuffer.push_back(0x90); // Push 0x90 (NOP) in hex
+    // Intel SDM Vol. 2B "Recommended Multi-Byte Sequence of NOP Instruction"
+    static const ZyanU8 Nops[9][9] =
+    {
+        { 0x90 },
+        { 0x66, 0x90 },
+        { 0x0F, 0x1F, 0x00 },
+        { 0x0F, 0x1F, 0x40, 0x00 },
+        { 0x0F, 0x1F, 0x44, 0x00, 0x00 },
+        { 0x66, 0x0F, 0x1F, 0x44, 0x00, 0x00 },
+        { 0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00 },
+        { 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 },
+        { 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 },
+    };
+
+    ZyanU64 Length = SizeOfBlock;
+
+    while (Length)
+    {
+        ZyanU64 NopSize = (Length > 9) ? 9 : Length;
+
+        this->EncodedBuffer.insert(
+            this->EncodedBuffer.end(), 
+            std::begin(Nops[NopSize - 1]), 
+            std::begin(Nops[NopSize - 1]) + NopSize);
+
+        Length -= NopSize;
     }
 
     this->InstructionLength = SizeOfBlock;
