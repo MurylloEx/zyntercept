@@ -17,11 +17,10 @@ void AssemblyBuilder::Jcc(ZydisDecoded* Reference, ZyanU64 Address) {
     ZydisEncoderRequest Instruction = {};
     ZyanU8 InstructionBuffer[ZYDIS_MAX_INSTRUCTION_LENGTH] = { 0 };
     ZyanUSize InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;
+    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Offset();
+    ZyanI64 Displacement = Difference(Address, SourceAddress + 6); // Target - (Source + SizeOfJump)
 
-    // Target - (Source + SizeOfJump)
-    ZyanI64 Displacement = Difference(Address, this->BaseAddress + Reference->Instruction.length);
-
-    /* Check if is bigger than 2^7 - 1 or lower than -2^7 to not overflow the signed int8 value */
+    /* Check if is bigger than 2^31 - 1 or lower than -2^31 to not overflow the signed int32 value */
     if ((0x7fffffffLL < Displacement) || (Displacement < -0x80000000LL)) {
         this->HasErrors = true;
         return;
@@ -155,7 +154,7 @@ void AssemblyBuilder::Jmp64(ZyanU64 Address) {
 
     Operand->type = ZYDIS_OPERAND_TYPE_MEMORY;
     Operand->mem.base = ZYDIS_REGISTER_RIP;
-    Operand->mem.displacement = 0x00000002U;
+    Operand->mem.displacement = 0x00000000U;
     Operand->mem.size = sizeof(ZyanU64);
 
     ZyanU8 PointerBuffer[sizeof(ZyanU64)] = { 0 };
@@ -174,29 +173,6 @@ void AssemblyBuilder::Jmp64(ZyanU64 Address) {
     }
 
     Buffer.insert(Buffer.end(), std::begin(InstructionBuffer), std::begin(InstructionBuffer) + InstructionLength);
-
-    InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;
-
-    memset(&Instruction, 0, sizeof(Instruction));
-    memset(InstructionBuffer, 0, sizeof(InstructionBuffer));
-
-    Instruction.mnemonic = ZYDIS_MNEMONIC_JMP;
-    Instruction.machine_mode = ZYDIS_MACHINE_MODE_LONG_64;
-    Instruction.operand_size_hint = ZYDIS_OPERAND_SIZE_HINT_8;
-    Instruction.operand_count = 1;
-
-    Operand->type = ZYDIS_OPERAND_TYPE_IMMEDIATE;
-    // 0x08 bytes after the <jmp qword ptr [rip+0x02], jmp rel8> instructions
-    // this jumps the invalid bytes due to write the absolute address in code page
-    Operand->imm.s = 0x08;
-
-    /* Encode short jump instruction */
-    if (ZYAN_FAILED(ZydisEncoderEncodeInstruction(&Instruction, &InstructionBuffer, &InstructionLength))) {
-        this->HasErrors = true;
-        return;
-    }
-
-    Buffer.insert(Buffer.end(), std::begin(InstructionBuffer), std::begin(InstructionBuffer) + InstructionLength);
     Buffer.insert(Buffer.end(), std::begin(PointerBuffer), std::end(PointerBuffer));
 
     this->InstructionLength = static_cast<ZyanU64>(Buffer.size()) * sizeof(ZyanU8);
@@ -208,7 +184,8 @@ void AssemblyBuilder::Jmp32(ZyanU64 Address) {
     ZydisEncoderOperand* Operand = &Instruction.operands[0];
     ZyanU8 InstructionBuffer[ZYDIS_MAX_INSTRUCTION_LENGTH] = { 0 };
     ZyanUSize InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;
-    ZyanI64 Displacement = Difference(Address, this->BaseAddress + 5); // Target - (Source + SizeOfJump)
+    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Offset();
+    ZyanI64 Displacement = Difference(Address, SourceAddress + 5); // Target - (Source + SizeOfJump)
 
     /* Check if is bigger than 2^31 - 1 or lower than -2^31 to not overflow the signed int32 value */
     if ((0x7fffffffLL < Displacement) || (Displacement < -0x80000000LL)) {
@@ -289,7 +266,8 @@ void AssemblyBuilder::Call64(ZyanU64 Address) {
 void AssemblyBuilder::Call32(ZyanU64 Address) {
     ZydisEncoderRequest Instruction = {};
     ZydisEncoderOperand* Operand = &Instruction.operands[0];
-    ZyanI64 Displacement = Difference(Address, this->BaseAddress + 5); // Target - (Source + SizeOfCall)
+    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Offset();
+    ZyanI64 Displacement = Difference(Address, SourceAddress + 5); // Target - (Source + SizeOfCall)
     ZyanU8 InstructionBuffer[ZYDIS_MAX_INSTRUCTION_LENGTH] = { 0 };
     ZyanUSize InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;
 
@@ -382,7 +360,11 @@ ZyanU64 AssemblyBuilder::GetBaseAddress() const {
 }
 
 ZyanU64 AssemblyBuilder::Offset() {
-    return this->Size() - 1;
+    if (this->Size() > 0) {
+        return this->Size() - 1;
+    }
+
+    return 0;
 }
 
 ZyanU64 AssemblyBuilder::LastInstructionLength() const {
@@ -404,7 +386,7 @@ ZyanBool AssemblyBuilder::CopyTo(void* Address, ZyanU64 SizeOfBuffer) {
 }
 
 ZyanBool AssemblyBuilder::Failed() const {
-    return this->HasErrors;
+    return this->HasErrors ? ZYAN_TRUE : ZYAN_FALSE;
 }
 
 ZyanBool AssemblyBuilder::Success() const {
