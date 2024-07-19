@@ -10,7 +10,7 @@ class AssemblyBuilder {
 protected:
     ZyanU64 BaseAddress;
     ZyanU64 InstructionLength = 0;
-    ZyanBool HasErrors = false;
+    bool HasErrors = false;
     std::vector<ZyanU8> EncodedBuffer = {};
 
 public:
