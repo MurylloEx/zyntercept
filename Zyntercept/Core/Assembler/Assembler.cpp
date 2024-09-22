@@ -17,7 +17,7 @@ void AssemblyBuilder::Jcc(ZydisDecoded* Reference, ZyanU64 Address) {
     ZydisEncoderRequest Instruction = {};
     ZyanU8 InstructionBuffer[ZYDIS_MAX_INSTRUCTION_LENGTH] = { 0 };
     ZyanUSize InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;
-    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Offset();
+    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Size();
     ZyanI64 Displacement = Difference(Address, SourceAddress + 6); // Target - (Source + SizeOfJump)
 
     /* Check if is bigger than 2^31 - 1 or lower than -2^31 to not overflow the signed int32 value */
@@ -184,7 +184,7 @@ void AssemblyBuilder::Jmp32(ZyanU64 Address) {
     ZydisEncoderOperand* Operand = &Instruction.operands[0];
     ZyanU8 InstructionBuffer[ZYDIS_MAX_INSTRUCTION_LENGTH] = { 0 };
     ZyanUSize InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;
-    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Offset();
+    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Size();
     ZyanI64 Displacement = Difference(Address, SourceAddress + 5); // Target - (Source + SizeOfJump)
 
     /* Check if is bigger than 2^31 - 1 or lower than -2^31 to not overflow the signed int32 value */
@@ -266,7 +266,7 @@ void AssemblyBuilder::Call64(ZyanU64 Address) {
 void AssemblyBuilder::Call32(ZyanU64 Address) {
     ZydisEncoderRequest Instruction = {};
     ZydisEncoderOperand* Operand = &Instruction.operands[0];
-    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Offset();
+    ZyanU64 SourceAddress = this->GetBaseAddress() + this->Size();
     ZyanI64 Displacement = Difference(Address, SourceAddress + 5); // Target - (Source + SizeOfCall)
     ZyanU8 InstructionBuffer[ZYDIS_MAX_INSTRUCTION_LENGTH] = { 0 };
     ZyanUSize InstructionLength = ZYDIS_MAX_INSTRUCTION_LENGTH;

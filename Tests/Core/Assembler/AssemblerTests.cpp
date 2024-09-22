@@ -378,10 +378,10 @@ TEST_CASE("Jcc method should encode a decoded <je rel imm8> instruction", "[asse
 	REQUIRE(Instruction.ExtensionFlag32 == 0x0f);
 	REQUIRE(Instruction.Jcc32Opcode == 0x84);
 
-	REQUIRE(Instruction.Jcc32Immediate[0] == 0xff);
-	REQUIRE(Instruction.Jcc32Immediate[1] == 0xfe);
-	REQUIRE(Instruction.Jcc32Immediate[2] == 0xe2);
-	REQUIRE(Instruction.Jcc32Immediate[3] == 0xaa);
+	REQUIRE(Instruction.Jcc32Immediate[0] == 0xaa);
+	REQUIRE(Instruction.Jcc32Immediate[1] == 0xe2);
+	REQUIRE(Instruction.Jcc32Immediate[2] == 0xfe);
+	REQUIRE(Instruction.Jcc32Immediate[3] == 0xff);
 }
 
 TEST_CASE("Jncc method should encode a decoded <je rel imm8> instruction into <jne rel imm32> instruction", "[assembler]") {
