@@ -72,7 +72,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 		&NumberOfFoundInstructions,
 		&SizeOfFoundInstructions))
 	{
-		free(ReplaceableInstructions);
+		std::free(ReplaceableInstructions);
 		return ZYAN_FALSE;
 	}
 
@@ -84,18 +84,18 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 		TargetFunction + 1,
 		TargetFunction + SizeOfFoundInstructions))
 	{
-		free(ReplaceableInstructions);
+		std::free(ReplaceableInstructions);
 		return ZYAN_FALSE;
 	}
 
 	ZyanU8* OriginalPrologueBuffer = (ZyanU8*)malloc(SizeOfFoundInstructions);
 
 	if (!OriginalPrologueBuffer) {
-		free(ReplaceableInstructions);
+		std::free(ReplaceableInstructions);
 		return ZYAN_FALSE;
 	}
 
-	memcpy(OriginalPrologueBuffer, PrologueBuffer, SizeOfFoundInstructions);
+	std::memcpy(OriginalPrologueBuffer, PrologueBuffer, SizeOfFoundInstructions);
 
 	ZyanU64 NearPageAddress = ZynterceptAllocateNearestAddress(
 		ProcessIdentifier,
@@ -106,8 +106,8 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 
 	if (!NearPageAddress)
 	{
-		free(ReplaceableInstructions);
-		free(OriginalPrologueBuffer);
+		std::free(ReplaceableInstructions);
+		std::free(OriginalPrologueBuffer);
 		return ZYAN_FALSE;
 	}
 
@@ -183,8 +183,8 @@ FAILURE:
 	Page.State = 0;
 	Page.Protection = 0;
 
-	free(ReplaceableInstructions);
-	free(OriginalPrologueBuffer);
+	std::free(ReplaceableInstructions);
+	std::free(OriginalPrologueBuffer);
 
 	ZYNTERCEPT_UNREFERENCED(ZynterceptReleaseMemory(ProcessIdentifier, &Page));
 

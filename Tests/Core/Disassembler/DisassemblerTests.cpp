@@ -11,7 +11,7 @@ static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 #endif
 
 TEST_CASE("Check if IsRelative recognize <jmp dword ptr 0xaabbccd9> as relative instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
+	ZyanU8 Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -23,7 +23,7 @@ TEST_CASE("Check if IsRelative recognize <jmp dword ptr 0xaabbccd9> as relative 
 }
 
 TEST_CASE("Check if IsRelative recognize <call dword ptr 0xaabbccd9> as relative instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0xe8, 0xd9, 0xcc, 0xbb, 0xaa };
+	ZyanU8 Buffer[] = { 0xe8, 0xd9, 0xcc, 0xbb, 0xaa };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -35,7 +35,7 @@ TEST_CASE("Check if IsRelative recognize <call dword ptr 0xaabbccd9> as relative
 }
 
 TEST_CASE("Check if IsRet recognize <ret> as near return instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0xc3 };
+	ZyanU8 Buffer[] = { 0xc3 };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -47,7 +47,7 @@ TEST_CASE("Check if IsRet recognize <ret> as near return instruction", "[disasse
 }
 
 TEST_CASE("Check if IsRet recognize <ret> as far return instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0xcb };
+	ZyanU8 Buffer[] = { 0xcb };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -59,7 +59,7 @@ TEST_CASE("Check if IsRet recognize <ret> as far return instruction", "[disassem
 }
 
 TEST_CASE("Check if IsCall recognize <call dword ptr 0xaabbccd9> as call instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0xe8, 0xd9, 0xcc, 0xbb, 0xaa };
+	ZyanU8 Buffer[] = { 0xe8, 0xd9, 0xcc, 0xbb, 0xaa };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -76,7 +76,7 @@ TEST_CASE("Check if IsCall recognize <call dword ptr 0xaabbccd9> as call instruc
 }
 
 TEST_CASE("Check if IsJmp recognize <jmp dword ptr 0xaabbccd9> as jmp instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
+	ZyanU8 Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -93,7 +93,7 @@ TEST_CASE("Check if IsJmp recognize <jmp dword ptr 0xaabbccd9> as jmp instructio
 }
 
 TEST_CASE("Check if IsJmp dont recognize <jne dword ptr 0xaabbccd9> as jmp instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0x0f, 0x85, 0xd9, 0xcc, 0xbb, 0xaa };
+	ZyanU8 Buffer[] = { 0x0f, 0x85, 0xd9, 0xcc, 0xbb, 0xaa };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -109,7 +109,7 @@ TEST_CASE("Check if IsJmp dont recognize <jne dword ptr 0xaabbccd9> as jmp instr
 }
 
 TEST_CASE("Check if IsJcc recognize <jne dword ptr 0xaabbccd9> as jcc instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0x0f, 0x85, 0xd9, 0xcc, 0xbb, 0xaa };
+	ZyanU8 Buffer[] = { 0x0f, 0x85, 0xd9, 0xcc, 0xbb, 0xaa };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -126,7 +126,7 @@ TEST_CASE("Check if IsJcc recognize <jne dword ptr 0xaabbccd9> as jcc instructio
 }
 
 TEST_CASE("Check if IsJcc dont recognize <jmp dword ptr 0xaabbccd9> as jcc instruction", "[disassembler]") {
-	uint8_t Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
+	ZyanU8 Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
 
 	ZydisDecoded Decoded = {};
 	ZydisDecoder Decoder = {};
@@ -142,7 +142,7 @@ TEST_CASE("Check if IsJcc dont recognize <jmp dword ptr 0xaabbccd9> as jcc instr
 }
 
 TEST_CASE("Check if SizeOfDecodedDesiredInstructions return the correct length in x86 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x8B, 0xFF,                      // 0x10000 | mov edi, edi
 		0x55,                            // 0x10002 | push ebp
 		0x8B, 0xEC,                      // 0x10003 | mov ebp, esp
@@ -172,7 +172,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return the correct length i
 }
 
 TEST_CASE("Check if SizeOfDecodedDesiredInstructions return the correct length in x64 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x83, 0xF9, 0x0B,                          // 0x10000 | cmp ecx,B
 		0x73, 0x19,                                // 0x10003 | jae 0x1001E
 		0x8B, 0xC1,                                // 0x10005 | mov eax,ecx
@@ -199,7 +199,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return the correct length i
 }
 
 TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x86 real function is too short", "[disassembler]") {
-	uint8_t Buffer[] = { 
+	ZyanU8 Buffer[] = {
 		0x8B, 0xFF, 0x55 // 0x10000 | mov edi, edi
 	};
 
@@ -216,7 +216,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x86 real f
 }
 
 TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x64 real function is too short", "[disassembler]") {
-	uint8_t Buffer[] = { 
+	ZyanU8 Buffer[] = {
 		0x83, 0xF9, 0x0B // 0x10000 | cmp ecx,B
 	};
 
@@ -233,7 +233,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x64 real f
 }
 
 TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x86 prologue has invalid instructions, paddings or returns", "[disassembler]") {
-	uint8_t Buffer[] = { 
+	ZyanU8 Buffer[] = {
 		0x8B, 0xFF, 0x55,              // 0x10000 | mov edi, edi
 		0xc3,                          // 0x10003 | ret
 		0xe9, 0xd9, 0xcc, 0xbb, 0xaa   // 0x10004 | jmp 0xaabbccd9
@@ -252,7 +252,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x86 prolog
 }
 
 TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x64 prologue has invalid instructions, paddings or returns", "[disassembler]") {
-	uint8_t Buffer[] = { 
+	ZyanU8 Buffer[] = {
 		0x83, 0xF9, 0x0B,             // 0x10000 | cmp ecx,B
 		0xc3,                         // 0x10003 | ret
 		0xe9, 0xd9, 0xcc, 0xbb, 0xaa  // 0x10004 | jmp 0xaabbccd9
@@ -271,7 +271,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x64 prolog
 }
 
 TEST_CASE("Check if FindReplaceableInstructions can find the instructions to replace in a x86 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x8B, 0xFF,                      // 0x10000 | mov edi, edi
 		0x55,                            // 0x10002 | push ebp
 		0x8B, 0xEC,                      // 0x10003 | mov ebp, esp
@@ -323,7 +323,7 @@ TEST_CASE("Check if FindReplaceableInstructions can find the instructions to rep
 }
 
 TEST_CASE("Check if FindReplaceableInstructions can find the instructions to replace in a x64 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x83, 0xF9, 0x0B,                         // 0x10000 | cmp ecx,B
 		0x73, 0x19,                               // 0x10003 | jae 0x1001E
 		0x8B, 0xC1,                               // 0x10005 | mov eax,ecx
@@ -372,7 +372,7 @@ TEST_CASE("Check if FindReplaceableInstructions can find the instructions to rep
 }
 
 TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x86 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x8B, 0xFF,                   // 0x10000 | mov edi, edi
 		0x55,                         // 0x10002 | push ebp
 		0x8B, 0xEC,                   // 0x10003 | mov ebp, esp
@@ -414,7 +414,7 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 }
 
 TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x64 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x83, 0xF9, 0x0B,                           // 0x10000 | cmp ecx,B
 		0x73, 0x19,                                 // 0x10003 | jae 0x1001E
 		0x8B, 0xC1,                                 // 0x10005 | mov eax,ecx
@@ -453,7 +453,7 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 }
 
 TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x86 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x83, 0xF8, 0x01,              // 0x10000 | cmp eax, 1          ; Compare n with 1
 		0x76, 0x14,                    // 0x10003 | jbe 0x10019         ; If n <= 1, jump to base_case (0x10019)
 		0x53,                          // 0x10005 | push ebx            ; Save ebx on the stack
@@ -472,7 +472,7 @@ TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x86 
 		0xC3                           // 0x10023 | ret                 ; Return
 	};
 
-	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZyanU64 BaseAddress = (ZyanU64)Buffer;
 	ZydisBranch* FoundBranchs = nullptr;
 	ZyanU64 NumberOfFoundBranchs = 0;
 
@@ -508,7 +508,7 @@ TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x86 
 }
 
 TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x64 real function", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x53,                                      // 0x10000 | push rbx            ; Save rbx on the stack
 		0x48, 0x83, 0xFF, 0x01,                    // 0x10001 | cmp rdi, 1          ; Compare n with 1
 		0x76, 0x21,                                // 0x10005 | jbe 0x10028         ; If n <= 1, jump to base_case (offset 0x10028)
@@ -527,7 +527,7 @@ TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x64 
 		0xC3                                       // 0x1002C | ret                 ; Return
 	};
 
-	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZyanU64 BaseAddress = (ZyanU64)Buffer;
 	ZydisBranch* FoundBranchs = nullptr;
 	ZyanU64 NumberOfFoundBranchs = 0;
 
@@ -563,7 +563,7 @@ TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x64 
 }
 
 TEST_CASE("Check if FindFunctionBranchs not find the all branchs correctly in a function without jumps", "[disassembler]") {
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x55,                                // 0x10000 | push rbp              ; Save base pointer
 		0x48, 0x89, 0xE5,                    // 0x10001 | mov rbp, rsp          ; Set base pointer to stack pointer
 		0x48, 0x89, 0x7D, 0xF8,              // 0x10004 | mov [rbp-8], rdi      ; Store a in [rbp-8]
@@ -577,7 +577,7 @@ TEST_CASE("Check if FindFunctionBranchs not find the all branchs correctly in a 
 		0xC3                                 // 0x10021 | ret                   ; Return
 	};
 
-	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZyanU64 BaseAddress = (ZyanU64)Buffer;
 	ZydisBranch* FoundBranchs = nullptr;
 	ZyanU64 NumberOfFoundBranchs = 0;
 
@@ -596,7 +596,7 @@ TEST_CASE("Check if FindFunctionBranchs not find the all branchs correctly in a 
 
 TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a x86 real function", "[disassembler]") {
 	// TODO: Review all memory addresses in comments of right side
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x83, 0xF8, 0x01,              // 0x10000 | cmp eax, 1          ; Compare n with 1
 		0x76, 0x14,                    // 0x10003 | jbe 0x10019         ; If n <= 1, jump to base_case (0x10019)
 		0x53,                          // 0x10005 | push ebx            ; Save ebx on the stack
@@ -615,7 +615,7 @@ TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a
 		0xC3                           // 0x10023 | ret                 ; Return
 	};
 
-	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZyanU64 BaseAddress = (ZyanU64)Buffer;
 	ZyanU64 BeginAddress = BaseAddress + 0x19;
 	ZyanU64 EndAddress = BaseAddress + 0x19;
 
@@ -632,7 +632,7 @@ TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a
 
 TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a x64 real function", "[disassembler]") {
 	// TODO: Review all memory addresses in comments of right side
-	uint8_t Buffer[] = {
+	ZyanU8 Buffer[] = {
 		0x53,                                      // 0x10000 | push rbx            ; Save rbx on the stack
 		0x48, 0x83, 0xFF, 0x01,                    // 0x10001 | cmp rdi, 1          ; Compare n with 1
 		0x76, 0x21,                                // 0x10005 | jbe 0x10028         ; If n <= 1, jump to base_case (offset 0x10028)
@@ -651,7 +651,7 @@ TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a
 		0xC3                                       // 0x1002C | ret                 ; Return
 	};
 
-	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
+	ZyanU64 BaseAddress = (ZyanU64)Buffer;
 	ZyanU64 BeginAddress = BaseAddress + 0x28;
 	ZyanU64 EndAddress = BaseAddress + 0x28;
 

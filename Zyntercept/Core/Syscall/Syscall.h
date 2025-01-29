@@ -1,7 +1,7 @@
 #ifndef ZYNTERCEPT_SYSCALL_H
 #define ZYNTERCEPT_SYSCALL_H
 
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #include <Zyntercept/Core/Syscall/Windows/Windows.h>
 
 #define ZYNTERCEPT_WINDOWS

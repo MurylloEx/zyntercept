@@ -3,27 +3,23 @@
 #include <Zyntercept/Core/Syscall/Syscall.h>
 #include <catch2/catch_test_macros.hpp>
 
-#define ORIGINAL_ROUTINE(FUNCTION) &(void*&)FUNCTION
-#define DETOUR_ROUTINE(FUNCTION) &FUNCTION
+TRAMPOLINE(IsMenu);
+TRAMPOLINE(IsZoomed);
+TRAMPOLINE(IsWindow);
 
-typedef int (WINAPI* pMessageBoxW)(
-    _In_opt_ HWND hWnd,
-    _In_opt_ LPCWSTR lpText,
-    _In_opt_ LPCWSTR lpCaption,
-    _In_ UINT uType);
-
-static volatile pMessageBoxW OriginalMessageBoxW = MessageBoxW;
-
-int WINAPI MyMessageBoxW(
-    _In_opt_ HWND hWnd,
-    _In_opt_ LPCWSTR lpText,
-    _In_opt_ LPCWSTR lpCaption,
-    _In_ UINT uType)
-{
-    return OriginalMessageBoxW(hWnd, lpText, L"This function was hooked with success!", uType);
+BOOL WINAPI InterceptIsMenu(HMENU hMenu) {
+    return TRUE;
 }
 
-TEST_CASE("Should hook MessageBoxW function", "[zyntercept]")
+BOOL WINAPI InterceptIsWindow(HWND hWnd) {
+    return TRUE;
+}
+
+BOOL WINAPI InterceptIsZoomed(HWND hWnd) {
+    return TRUE;
+}
+
+TEST_CASE("Should hook IsMenu, IsWindow and IsZoomed functions", "[zyntercept]")
 {
     ZynterceptProcess Process = { 0 };
 
@@ -34,17 +30,23 @@ TEST_CASE("Should hook MessageBoxW function", "[zyntercept]")
 
     ZynterceptTransactionBegin();
     ZynterceptAttachProcess(&Process);
-    ZynterceptAttach(ORIGINAL_ROUTINE(OriginalMessageBoxW), DETOUR_ROUTINE(MyMessageBoxW));
+    ZynterceptAttach(ROUTINE(IsMenu), INTERCEPTION(IsMenu));
+    ZynterceptAttach(ROUTINE(IsWindow), INTERCEPTION(IsWindow));
+    ZynterceptAttach(ROUTINE(IsZoomed), INTERCEPTION(IsZoomed));
     ZynterceptTransactionCommit();
 
-    MessageBoxW(NULL, L"Title", L"Body", MB_OK);
+    REQUIRE(IsMenu((HMENU)0xFFFFFFFF) == TRUE);
+    REQUIRE(IsWindow((HWND)0xFFFFFFFF) == TRUE);
+    REQUIRE(IsZoomed((HWND)0xFFFFFFFF) == TRUE);
 
     ZynterceptTransactionBegin();
     ZynterceptAttachProcess(&Process);
-    ZynterceptDetach(ORIGINAL_ROUTINE(OriginalMessageBoxW));
+    ZynterceptDetach(ROUTINE(IsMenu));
+    ZynterceptDetach(ROUTINE(IsWindow));
+    ZynterceptDetach(ROUTINE(IsZoomed));
     ZynterceptTransactionCommit();
 
-    MessageBoxW(NULL, L"Title", L"Body", MB_OK);
-
-    REQUIRE(true);
+    REQUIRE(IsMenu((HMENU)0xFFFFFFFF) == FALSE);
+    REQUIRE(IsWindow((HWND)0xFFFFFFFF) == FALSE);
+    REQUIRE(IsZoomed((HWND)0xFFFFFFFF) == FALSE);
 }

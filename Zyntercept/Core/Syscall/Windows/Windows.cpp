@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <winternl.h>
 
+#define CURRENT_PROCESS_IDENTIFIER (ZyanVoidPointer)-1
 #define ZYNTERCEPT_CAST_INTEGER(Type, ProcessIdentifier, Integer) \
 	ZynterceptIs32BitProcessWindows(ProcessIdentifier) \
 		? (Type)((ZyanU64)Integer & 0xFFFFFFFFUL) \
@@ -193,12 +194,20 @@ NTSTATUS NtFlushInstructionCache(
 
 ZyanBool __zyntercept_cdecl ZynterceptIs64BitSystemWindows()
 {
+	static bool IsCached = false;
+	static ZyanBool Status = ZYAN_FALSE;
+
+	if (IsCached) {
+		return Status;
+	}
+
 	DWORD LastError = GetLastError();
 	UNREFERENCED_PARAMETER(GetSystemWow64DirectoryW(NULL, 0));
-	ZyanBool Status = (GetLastError() == ERROR_CALL_NOT_IMPLEMENTED);
+	Status = (GetLastError() == ERROR_CALL_NOT_IMPLEMENTED) ? ZYAN_FALSE : ZYAN_TRUE;
+	IsCached = true;
 	SetLastError(LastError);
 
-	return Status ? ZYAN_FALSE : ZYAN_TRUE;
+	return Status;
 }
 
 ZyanBool __zyntercept_cdecl ZynterceptIs32BitSystemWindows()
@@ -214,7 +223,7 @@ ZyanBool __zyntercept_cdecl ZynterceptIs32BitProcessWindows(
 		return ZYAN_TRUE;
 	}
 
-	if ((HANDLE)ProcessIdentifier == GetCurrentProcess())
+	if (ProcessIdentifier == CURRENT_PROCESS_IDENTIFIER)
 	{
 		return sizeof(void*) == 4 ? ZYAN_TRUE : ZYAN_FALSE;
 	}
@@ -241,7 +250,7 @@ ZyanBool __zyntercept_cdecl ZynterceptIsUnsupportedProcessArchitectureWindows(
 		return ZYAN_FALSE;
 	}
 
-	if (ZynterceptIs32BitProcessWindows(GetCurrentProcess()) &&
+	if (ZynterceptIs32BitProcessWindows(CURRENT_PROCESS_IDENTIFIER) &&
 		ZynterceptIs64BitProcessWindows(ProcessIdentifier))
 	{
 		return ZYAN_TRUE;
@@ -253,10 +262,11 @@ ZyanBool __zyntercept_cdecl ZynterceptIsUnsupportedProcessArchitectureWindows(
 ZyanBool __zyntercept_cdecl ZynterceptIsCurrentProcessWindows(
 	__zyntercept_in ZyanVoidPointer ProcessIdentifier)
 {
-	if (ProcessIdentifier == (ZyanVoidPointer)GetCurrentProcess())
+	if (ProcessIdentifier == CURRENT_PROCESS_IDENTIFIER)
 	{
 		return ZYAN_TRUE;
 	}
+
 	return ZYAN_FALSE;
 }
 

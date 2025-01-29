@@ -1,6 +1,12 @@
 #ifndef ZYNTERCEPT_H
 #define ZYNTERCEPT_H
 
+#if defined(__cplusplus)
+#define ROUTINE(Routine) &(void*&)Original##Routine
+#define INTERCEPTION(Routine) &Intercept##Routine
+#define TRAMPOLINE(Routine) static decltype(Routine)* Original##Routine = Routine
+#endif
+
 typedef void* ZynterceptHandle;
 
 typedef enum ZynterceptArchitecture_ {
