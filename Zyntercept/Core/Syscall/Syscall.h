@@ -22,28 +22,7 @@
 #define ZynterceptFlushMicroprocessorCache ZynterceptFlushMicroprocessorCacheWindows
 #define ZynterceptAtomicWriteMemory ZynterceptAtomicWriteMemoryWindows
 
-#elif defined(__linux__)
-#include <Zyntercept/Core/Syscall/Linux/Linux.h>
-
-#define ZYNTERCEPT_LINUX
-
-#define ZynterceptIs64BitSystem ZynterceptIs64BitSystemLinux
-#define ZynterceptIs32BitSystem ZynterceptIs32BitSystemLinux
-#define ZynterceptIs32BitProcess ZynterceptIs32BitProcessLinux
-#define ZynterceptIs64BitProcess ZynterceptIs64BitProcessLinux
-#define ZynterceptIsUnsupportedProcessArchitecture ZynterceptIsUnsupportedProcessArchitectureLinux
-#define ZynterceptIsCurrentProcess ZynterceptIsCurrentProcessLinux
-#define ZynterceptVirtualMemoryInformation ZynterceptVirtualMemoryInformationLinux
-#define ZynterceptAllocateMemory ZynterceptAllocateMemoryLinux
-#define ZynterceptReleaseMemory ZynterceptReleaseMemoryLinux
-#define ZynterceptProtectMemory ZynterceptProtectMemoryLinux
-#define ZynterceptQueryMemory ZynterceptQueryMemoryLinux
-#define ZynterceptWriteMemory ZynterceptWriteMemoryLinux
-#define ZynterceptReadMemory ZynterceptReadMemoryLinux
-#define ZynterceptFlushMicroprocessorCache ZynterceptFlushMicroprocessorCacheLinux
-#define ZynterceptAtomicWriteMemory ZynterceptAtomicWriteMemoryLinux
-
-#elif defined(unix) || defined(__unix__) || defined(__unix)
+#elif defined(__linux__) || defined(unix) || defined(__unix__) || defined(__unix)
 #include <Zyntercept/Core/Syscall/Unix/Unix.h>
 
 #define ZYNTERCEPT_UNIX
@@ -65,7 +44,7 @@
 #define ZynterceptAtomicWriteMemory ZynterceptAtomicWriteMemoryUnix
 
 #else
-#error Zyntercept can only be built in Windows, Linux or Unix operating systems
+#error Zyntercept can only be built in Windows or Unix operating systems
 #endif
 
 #endif // ZYNTERCEPT_SYSCALL_H

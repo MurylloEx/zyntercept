@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-ZyanBool __zyntercept_cdecl IsRelative(
+ZyanBool __zyntercept_cdecl ZynterceptIsRelative(
     __zyntercept_in ZydisDecoded* DecodedInstruction)
 {
     ZydisDecodedInstruction* Instruction = &DecodedInstruction->Instruction;
@@ -50,7 +50,7 @@ ZyanBool __zyntercept_cdecl IsRelative(
     return ZYAN_FALSE;
 }
 
-ZyanBool __zyntercept_cdecl IsRet(
+ZyanBool __zyntercept_cdecl ZynterceptIsRet(
     __zyntercept_in ZydisDecoded *DecodedInstruction)
 {
     if (DecodedInstruction->Instruction.meta.category == ZYDIS_CATEGORY_RET)
@@ -61,7 +61,7 @@ ZyanBool __zyntercept_cdecl IsRet(
     return ZYAN_FALSE;
 }
 
-ZyanBool __zyntercept_cdecl IsCall(
+ZyanBool __zyntercept_cdecl ZynterceptIsCall(
     __zyntercept_in ZydisDecoded* DecodedInstruction,
     __zyntercept_out ZydisDecodedOperand** ImmediateOperand)
 {
@@ -106,7 +106,7 @@ ZyanBool __zyntercept_cdecl IsCall(
     return ZYAN_FALSE;
 }
 
-ZyanBool __zyntercept_cdecl IsJcc(
+ZyanBool __zyntercept_cdecl ZynterceptIsJcc(
     __zyntercept_in ZydisDecoded* DecodedInstruction,
     __zyntercept_out ZydisDecodedOperand** ImmediateOperand)
 {
@@ -180,7 +180,7 @@ ZyanBool __zyntercept_cdecl IsJcc(
     return ZYAN_TRUE;
 }
 
-ZyanBool __zyntercept_cdecl IsJmp(
+ZyanBool __zyntercept_cdecl ZynterceptIsJmp(
     __zyntercept_in ZydisDecoded* DecodedInstruction,
     __zyntercept_out ZydisDecodedOperand** ImmediateOperand)
 {
@@ -233,7 +233,7 @@ ZyanBool __zyntercept_cdecl IsJmp(
     return ZYAN_FALSE;
 }
 
-ZyanU64 __zyntercept_cdecl SizeOfDecodedDesiredInstructions(
+ZyanU64 __zyntercept_cdecl ZynterceptSizeOfDecodedDesiredInstructions(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
     __zyntercept_in ZyanU8* Buffer,
@@ -285,7 +285,7 @@ ZyanU64 __zyntercept_cdecl SizeOfDecodedDesiredInstructions(
     return 0;
 }
 
-ZyanBool __zyntercept_cdecl FindReplaceableInstructions(
+ZyanBool __zyntercept_cdecl ZynterceptFindReplaceableInstructions(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
     __zyntercept_in ZyanU8* Buffer,
@@ -351,7 +351,7 @@ ZyanBool __zyntercept_cdecl FindReplaceableInstructions(
     return ZYAN_TRUE;
 }
 
-ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
+ZyanBool __zyntercept_cdecl ZynterceptFindNextFunctionBranch(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
     __zyntercept_in ZyanU8* Buffer,
@@ -386,7 +386,7 @@ ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
         NextOffset += Decoded.Instruction.length;
 
         /* If current instruction is a <ret>, stop decoding instructions */
-        if (IsRet(&Decoded))
+        if (ZynterceptIsRet(&Decoded))
         {
             *BranchInstruction = Decoded;
             *InstructionAddress = BaseAddress + Offset;
@@ -397,7 +397,7 @@ ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
         }
 
         /* Check if current instruction is a <jmp rel8/16/32> */
-        if (IsJmp(&Decoded, &Operand) && Operand)
+        if (ZynterceptIsJmp(&Decoded, &Operand) && Operand)
         {
             *BranchInstruction = Decoded;
             *InstructionAddress = BaseAddress + Offset;
@@ -408,7 +408,7 @@ ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
         }
 
         /* Check if current instruction is a <jcc rel8/16/32> */
-        if (IsJcc(&Decoded, &Operand) && Operand)
+        if (ZynterceptIsJcc(&Decoded, &Operand) && Operand)
         {
             *BranchInstruction = Decoded;
             *InstructionAddress = BaseAddress + Offset;
@@ -425,7 +425,7 @@ ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
     return ZYAN_FALSE;
 }
 
-ZyanBool __zyntercept_cdecl FindFunctionBranchs(
+ZyanBool __zyntercept_cdecl ZynterceptFindFunctionBranchs(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
@@ -499,7 +499,7 @@ ZyanBool __zyntercept_cdecl FindFunctionBranchs(
 
         /* Fetch the next function branch (Jmp or Jcc) */
         /* If there's nothing to fetch anymore in this branch, the function returns FALSE */
-        if (!FindNextFunctionBranch(
+        if (!ZynterceptFindNextFunctionBranch(
             MachineMode,
             StackWidth,
             Buffer,
@@ -572,7 +572,7 @@ FAILURE:
     return ZYAN_FALSE;
 }
 
-ZyanBool __zyntercept_cdecl HasFunctionBranchDestinationsBetween(
+ZyanBool __zyntercept_cdecl ZynterceptHasFunctionBranchDestinationsBetween(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
@@ -585,7 +585,7 @@ ZyanBool __zyntercept_cdecl HasFunctionBranchDestinationsBetween(
 
     /* This function will follow all possible jumps in target function memory */
     /* and then create an array with branchs containing the address of the jump and his destination */
-    if (!FindFunctionBranchs(
+    if (!ZynterceptFindFunctionBranchs(
         ProcessIdentifier,
         MachineMode,
         StackWidth,

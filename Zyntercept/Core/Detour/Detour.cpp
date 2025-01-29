@@ -42,7 +42,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 		return ZYAN_FALSE;
 	}
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		MachineMode,
 		StackWidth,
 		PrologueBuffer,
@@ -61,7 +61,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 		return ZYAN_FALSE;
 	}
 
-	if (!FindReplaceableInstructions(
+	if (!ZynterceptFindReplaceableInstructions(
 		MachineMode,
 		StackWidth,
 		PrologueBuffer,
@@ -76,7 +76,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction64(
 		return ZYAN_FALSE;
 	}
 
-	if (HasFunctionBranchDestinationsBetween(
+	if (ZynterceptHasFunctionBranchDestinationsBetween(
 		ProcessIdentifier,
 		MachineMode,
 		StackWidth,
@@ -223,7 +223,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		return ZYAN_FALSE;
 	}
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		MachineMode,
 		StackWidth,
 		PrologueBuffer,
@@ -242,7 +242,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		return ZYAN_FALSE;
 	}
 
-	if (!FindReplaceableInstructions(
+	if (!ZynterceptFindReplaceableInstructions(
 		MachineMode,
 		StackWidth,
 		PrologueBuffer,
@@ -257,7 +257,7 @@ ZyanBool __zyntercept_cdecl ZynterceptDetourFunction32(
 		return ZYAN_FALSE;
 	}
 
-	if (HasFunctionBranchDestinationsBetween(
+	if (ZynterceptHasFunctionBranchDestinationsBetween(
 		ProcessIdentifier,
 		MachineMode,
 		StackWidth,

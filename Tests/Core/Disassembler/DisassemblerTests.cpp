@@ -6,6 +6,10 @@
 #include <Windows.h>
 #endif
 
+#if defined(ZYNTERCEPT_WINDOWS)
+static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
+
 TEST_CASE("Check if IsRelative recognize <jmp dword ptr 0xaabbccd9> as relative instruction", "[disassembler]") {
 	uint8_t Buffer[] = { 0xe9, 0xd9, 0xcc, 0xbb, 0xaa };
 
@@ -15,7 +19,7 @@ TEST_CASE("Check if IsRelative recognize <jmp dword ptr 0xaabbccd9> as relative 
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderInit(&Decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32)));
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderDecodeFull(&Decoder, Buffer, sizeof(Buffer), &Decoded.Instruction, Decoded.Operands)));
 	
-	REQUIRE(IsRelative(&Decoded) == ZYAN_TRUE);
+	REQUIRE(ZynterceptIsRelative(&Decoded) == ZYAN_TRUE);
 }
 
 TEST_CASE("Check if IsRelative recognize <call dword ptr 0xaabbccd9> as relative instruction", "[disassembler]") {
@@ -27,7 +31,7 @@ TEST_CASE("Check if IsRelative recognize <call dword ptr 0xaabbccd9> as relative
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderInit(&Decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32)));
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderDecodeFull(&Decoder, Buffer, sizeof(Buffer), &Decoded.Instruction, Decoded.Operands)));
 
-	REQUIRE(IsRelative(&Decoded) == ZYAN_TRUE);
+	REQUIRE(ZynterceptIsRelative(&Decoded) == ZYAN_TRUE);
 }
 
 TEST_CASE("Check if IsRet recognize <ret> as near return instruction", "[disassembler]") {
@@ -39,7 +43,7 @@ TEST_CASE("Check if IsRet recognize <ret> as near return instruction", "[disasse
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderInit(&Decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32)));
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderDecodeFull(&Decoder, Buffer, sizeof(Buffer), &Decoded.Instruction, Decoded.Operands)));
 
-	REQUIRE(IsRet(&Decoded) == ZYAN_TRUE);
+	REQUIRE(ZynterceptIsRet(&Decoded) == ZYAN_TRUE);
 }
 
 TEST_CASE("Check if IsRet recognize <ret> as far return instruction", "[disassembler]") {
@@ -51,7 +55,7 @@ TEST_CASE("Check if IsRet recognize <ret> as far return instruction", "[disassem
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderInit(&Decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32)));
 	REQUIRE(ZYAN_SUCCESS(ZydisDecoderDecodeFull(&Decoder, Buffer, sizeof(Buffer), &Decoded.Instruction, Decoded.Operands)));
 
-	REQUIRE(IsRet(&Decoded) == ZYAN_TRUE);
+	REQUIRE(ZynterceptIsRet(&Decoded) == ZYAN_TRUE);
 }
 
 TEST_CASE("Check if IsCall recognize <call dword ptr 0xaabbccd9> as call instruction", "[disassembler]") {
@@ -65,7 +69,7 @@ TEST_CASE("Check if IsCall recognize <call dword ptr 0xaabbccd9> as call instruc
 
 	ZydisDecodedOperand* Operand = nullptr;
 
-	REQUIRE(IsCall(&Decoded, &Operand) == ZYAN_TRUE);
+	REQUIRE(ZynterceptIsCall(&Decoded, &Operand) == ZYAN_TRUE);
 
 	REQUIRE(Operand != nullptr);
 	REQUIRE((Operand->imm.value.u & 0xffffffffUL) == 0xaabbccd9UL);
@@ -82,7 +86,7 @@ TEST_CASE("Check if IsJmp recognize <jmp dword ptr 0xaabbccd9> as jmp instructio
 
 	ZydisDecodedOperand* Operand = nullptr;
 
-	REQUIRE(IsJmp(&Decoded, &Operand) == ZYAN_TRUE);
+	REQUIRE(ZynterceptIsJmp(&Decoded, &Operand) == ZYAN_TRUE);
 
 	REQUIRE(Operand != nullptr);
 	REQUIRE((Operand->imm.value.u & 0xffffffffUL) == 0xaabbccd9UL);
@@ -99,7 +103,7 @@ TEST_CASE("Check if IsJmp dont recognize <jne dword ptr 0xaabbccd9> as jmp instr
 
 	ZydisDecodedOperand* Operand = nullptr;
 
-	REQUIRE(IsJmp(&Decoded, &Operand) == ZYAN_FALSE);
+	REQUIRE(ZynterceptIsJmp(&Decoded, &Operand) == ZYAN_FALSE);
 
 	REQUIRE(Operand == nullptr);
 }
@@ -115,7 +119,7 @@ TEST_CASE("Check if IsJcc recognize <jne dword ptr 0xaabbccd9> as jcc instructio
 
 	ZydisDecodedOperand* Operand = nullptr;
 
-	REQUIRE(IsJcc(&Decoded, &Operand) == ZYAN_TRUE);
+	REQUIRE(ZynterceptIsJcc(&Decoded, &Operand) == ZYAN_TRUE);
 
 	REQUIRE(Operand != nullptr);
 	REQUIRE((Operand->imm.value.u & 0xffffffffUL) == 0xaabbccd9UL);
@@ -132,7 +136,7 @@ TEST_CASE("Check if IsJcc dont recognize <jmp dword ptr 0xaabbccd9> as jcc instr
 
 	ZydisDecodedOperand* Operand = nullptr;
 
-	REQUIRE(IsJcc(&Decoded, &Operand) == ZYAN_FALSE);
+	REQUIRE(ZynterceptIsJcc(&Decoded, &Operand) == ZYAN_FALSE);
 
 	REQUIRE(Operand == nullptr);
 }
@@ -157,7 +161,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return the correct length i
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LEGACY_32, 
 		ZYDIS_STACK_WIDTH_32, 
 		Buffer, 
@@ -184,7 +188,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return the correct length i
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
 		Buffer,
@@ -201,7 +205,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x86 real f
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LEGACY_32,
 		ZYDIS_STACK_WIDTH_32,
 		Buffer,
@@ -218,7 +222,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x64 real f
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
 		Buffer,
@@ -237,7 +241,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x86 prolog
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LEGACY_32,
 		ZYDIS_STACK_WIDTH_32,
 		Buffer,
@@ -256,7 +260,7 @@ TEST_CASE("Check if SizeOfDecodedDesiredInstructions return zero when x64 prolog
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
 		Buffer,
@@ -286,7 +290,7 @@ TEST_CASE("Check if FindReplaceableInstructions can find the instructions to rep
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
 		Buffer,
@@ -299,7 +303,7 @@ TEST_CASE("Check if FindReplaceableInstructions can find the instructions to rep
 
 	REQUIRE(DecodedBuffer != nullptr);
 
-	ZyanBool Status = FindReplaceableInstructions(
+	ZyanBool Status = ZynterceptFindReplaceableInstructions(
 		ZYDIS_MACHINE_MODE_LEGACY_32,
 		ZYDIS_STACK_WIDTH_32,
 		Buffer,
@@ -335,7 +339,7 @@ TEST_CASE("Check if FindReplaceableInstructions can find the instructions to rep
 
 	ZyanU32 DesiredSize = 5; // 5 bytes
 
-	ZyanU64 SizeOfDecodedInstructions = SizeOfDecodedDesiredInstructions(
+	ZyanU64 SizeOfDecodedInstructions = ZynterceptSizeOfDecodedDesiredInstructions(
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
 		Buffer,
@@ -348,7 +352,7 @@ TEST_CASE("Check if FindReplaceableInstructions can find the instructions to rep
 
 	REQUIRE(DecodedBuffer != nullptr);
 
-	ZyanBool Status = FindReplaceableInstructions(
+	ZyanBool Status = ZynterceptFindReplaceableInstructions(
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
 		Buffer,
@@ -392,7 +396,7 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 	ZyanU64 GreenBranchAddress = 0;
 	ZyanU64 RedBranchAddress = 0;
 
-	ZyanBool Status = FindNextFunctionBranch(
+	ZyanBool Status = ZynterceptFindNextFunctionBranch(
 		ZYDIS_MACHINE_MODE_LEGACY_32,
 		ZYDIS_STACK_WIDTH_32,
 		Buffer,
@@ -431,7 +435,7 @@ TEST_CASE("Check if FindNextFunctionBranch find the next branch correctly in a x
 	ZyanU64 GreenBranchAddress = 0;
 	ZyanU64 RedBranchAddress = 0;
 
-	ZyanBool Status = FindNextFunctionBranch(
+	ZyanBool Status = ZynterceptFindNextFunctionBranch(
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
 		Buffer,
@@ -468,15 +472,11 @@ TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x86 
 		0xC3                           // 0x10023 | ret                 ; Return
 	};
 
-#if defined(ZYNTERCEPT_WINDOWS)
-	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
-
 	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
 	ZydisBranch* FoundBranchs = nullptr;
 	ZyanU64 NumberOfFoundBranchs = 0;
 
-	ZyanBool Status = FindFunctionBranchs(
+	ZyanBool Status = ZynterceptFindFunctionBranchs(
 		ProcessIdentifier,
 		ZYDIS_MACHINE_MODE_LEGACY_32,
 		ZYDIS_STACK_WIDTH_32,
@@ -527,15 +527,11 @@ TEST_CASE("Check if FindFunctionBranchs find the all branchs correctly in a x64 
 		0xC3                                       // 0x1002C | ret                 ; Return
 	};
 
-#if defined(ZYNTERCEPT_WINDOWS)
-	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
-
 	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
 	ZydisBranch* FoundBranchs = nullptr;
 	ZyanU64 NumberOfFoundBranchs = 0;
 
-	ZyanBool Status = FindFunctionBranchs(
+	ZyanBool Status = ZynterceptFindFunctionBranchs(
 		ProcessIdentifier,
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
@@ -581,15 +577,11 @@ TEST_CASE("Check if FindFunctionBranchs not find the all branchs correctly in a 
 		0xC3                                 // 0x10021 | ret                   ; Return
 	};
 
-#if defined(ZYNTERCEPT_WINDOWS)
-	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
-
 	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
 	ZydisBranch* FoundBranchs = nullptr;
 	ZyanU64 NumberOfFoundBranchs = 0;
 
-	ZyanBool Status = FindFunctionBranchs(
+	ZyanBool Status = ZynterceptFindFunctionBranchs(
 		ProcessIdentifier,
 		ZYDIS_MACHINE_MODE_LONG_64,
 		ZYDIS_STACK_WIDTH_64,
@@ -623,15 +615,11 @@ TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a
 		0xC3                           // 0x10023 | ret                 ; Return
 	};
 
-#if defined(ZYNTERCEPT_WINDOWS)
-	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
-
 	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
 	ZyanU64 BeginAddress = BaseAddress + 0x19;
 	ZyanU64 EndAddress = BaseAddress + 0x19;
 
-	ZyanBool Status = HasFunctionBranchDestinationsBetween(
+	ZyanBool Status = ZynterceptHasFunctionBranchDestinationsBetween(
 		ProcessIdentifier,
 		ZYDIS_MACHINE_MODE_LEGACY_32,
 		ZYDIS_STACK_WIDTH_32,
@@ -663,15 +651,11 @@ TEST_CASE("Check if HasFunctionBranchDestinationsBetween detect recursivity in a
 		0xC3                                       // 0x1002C | ret                 ; Return
 	};
 
-#if defined(ZYNTERCEPT_WINDOWS)
-	ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
-
 	ZyanU64 BaseAddress = (ZyanU64)&Buffer;
 	ZyanU64 BeginAddress = BaseAddress + 0x28;
 	ZyanU64 EndAddress = BaseAddress + 0x28;
 
-	ZyanBool Status = HasFunctionBranchDestinationsBetween(
+	ZyanBool Status = ZynterceptHasFunctionBranchDestinationsBetween(
 		ProcessIdentifier, 
 		ZYDIS_MACHINE_MODE_LONG_64, 
 		ZYDIS_STACK_WIDTH_64, 

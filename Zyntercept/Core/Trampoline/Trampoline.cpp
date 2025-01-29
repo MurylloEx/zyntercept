@@ -91,7 +91,7 @@ ZyanBool __zyntercept_cdecl RelocateJmp(
 	ZydisDecodedOperand* ImmediateOperand = nullptr;
 
 	/* If it's not a jmp instruction, ignore it and return FALSE */
-	if (!IsJmp(Decoded, &ImmediateOperand)) {
+	if (!ZynterceptIsJmp(Decoded, &ImmediateOperand)) {
 		return ZYAN_FALSE;
 	}
 
@@ -127,7 +127,7 @@ ZyanBool __zyntercept_cdecl RelocateJcc(
 	ZydisDecodedOperand* ImmediateOperand = nullptr;
 
 	/* If it's not a jmp instruction, ignore it and return FALSE */
-	if (!IsJcc(Decoded, &ImmediateOperand)) {
+	if (!ZynterceptIsJcc(Decoded, &ImmediateOperand)) {
 		return ZYAN_FALSE;
 	}
 
@@ -144,7 +144,7 @@ ZyanBool __zyntercept_cdecl RelocateJcc(
 	if (IsX64Process) {
 		/* Negate the JCC to skip the absolute jump when the condition is met */
 		/* Jump to the last NOP instruction of the memory block */
-		Builder->Jncc(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_STACK_WIDTH_64, Decoded, Builder->GetBaseAddress() + Builder->Size() + 24);
+		Builder->Jncc(ZYDIS_MACHINE_MODE_LONG_64, ZYDIS_STACK_WIDTH_64, Decoded, Builder->GetBaseAddress() + Builder->Size() + 30);
 
 		/* Write the unconditional jump to where the jcc should point to */
 		/* The trick is use an unconditional jump, negate the jcc and skip it */
@@ -157,7 +157,7 @@ ZyanBool __zyntercept_cdecl RelocateJcc(
 	else {
 		/* Negate the JCC to skip the absolute jump when the condition is met */
 		/* Jump to the last NOP instruction of the memory block */
-		Builder->Jncc(ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32, Decoded, Builder->GetBaseAddress() + Builder->Size() + 24);
+		Builder->Jncc(ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32, Decoded, Builder->GetBaseAddress() + Builder->Size() + 30);
 
 		/* Write the unconditional jump to where the jcc should point to */
 		/* The trick is use an unconditional jump, negate the jcc and skip it */
@@ -181,7 +181,7 @@ ZyanBool __zyntercept_cdecl RelocateCall(
 	ZydisDecodedOperand* ImmediateOperand = nullptr;
 
 	/* If it's not a call instruction, ignore it and return FALSE */
-	if (!IsCall(Decoded, &ImmediateOperand)) {
+	if (!ZynterceptIsCall(Decoded, &ImmediateOperand)) {
 		return ZYAN_FALSE;
 	}
 
@@ -221,18 +221,18 @@ ZyanBool __zyntercept_cdecl ZynterceptCompileTrampoline(
 	for (ZyanU64 Offset = 0; Offset < NumberOfPrologueInstructions; Offset++) {
 		ZydisDecoded* Decoded = &PrologueInstructions[Offset];
 
-		if (IsRelative(Decoded)) {
-			if (IsJmp(Decoded, nullptr)) {
+		if (ZynterceptIsRelative(Decoded)) {
+			if (ZynterceptIsJmp(Decoded, nullptr)) {
 				if (!RelocateJmp(Builder, Is64BitProcess, Decoded, OldInstructionAddress)) {
 					return ZYAN_FALSE;
 				}
 			}
-			else if (IsJcc(Decoded, nullptr)) {
+			else if (ZynterceptIsJcc(Decoded, nullptr)) {
 				if (!RelocateJcc(Builder, Is64BitProcess, Decoded, OldInstructionAddress)) {
 					return ZYAN_FALSE;
 				}
 			}
-			else if (IsCall(Decoded, nullptr)) {
+			else if (ZynterceptIsCall(Decoded, nullptr)) {
 				if (!RelocateCall(Builder, Is64BitProcess, Decoded, OldInstructionAddress)) {
 					return ZYAN_FALSE;
 				}

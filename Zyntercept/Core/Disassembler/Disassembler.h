@@ -33,32 +33,32 @@ typedef struct ZydisBranch_
 
 #pragma pack(pop)
 
-ZyanBool __zyntercept_cdecl IsRelative(
+ZyanBool __zyntercept_cdecl ZynterceptIsRelative(
     __zyntercept_in ZydisDecoded *DecodedInstruction);
 
-ZyanBool __zyntercept_cdecl IsRet(
+ZyanBool __zyntercept_cdecl ZynterceptIsRet(
     __zyntercept_in ZydisDecoded *DecodedInstruction);
 
-ZyanBool __zyntercept_cdecl IsCall(
+ZyanBool __zyntercept_cdecl ZynterceptIsCall(
     __zyntercept_in ZydisDecoded *DecodedInstruction,
     __zyntercept_out ZydisDecodedOperand **ImmediateOperand);
 
-ZyanBool __zyntercept_cdecl IsJcc(
+ZyanBool __zyntercept_cdecl ZynterceptIsJcc(
     __zyntercept_in ZydisDecoded *DecodedInstruction,
     __zyntercept_out ZydisDecodedOperand **ImmediateOperand);
 
-ZyanBool __zyntercept_cdecl IsJmp(
+ZyanBool __zyntercept_cdecl ZynterceptIsJmp(
     __zyntercept_in ZydisDecoded *DecodedInstruction,
     __zyntercept_out ZydisDecodedOperand **ImmediateOperand);
 
-ZyanU64 __zyntercept_cdecl SizeOfDecodedDesiredInstructions(
+ZyanU64 __zyntercept_cdecl ZynterceptSizeOfDecodedDesiredInstructions(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
     __zyntercept_in ZyanU8 *Buffer,
     __zyntercept_in ZyanUSize BufferSize,
     __zyntercept_in ZyanU32 DesiredSize);
 
-ZyanBool __zyntercept_cdecl FindReplaceableInstructions(
+ZyanBool __zyntercept_cdecl ZynterceptFindReplaceableInstructions(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
     __zyntercept_in ZyanU8 *Buffer,
@@ -69,7 +69,7 @@ ZyanBool __zyntercept_cdecl FindReplaceableInstructions(
     __zyntercept_out ZyanU64 *NumberOfFoundInstructions,
     __zyntercept_out ZyanUSize *SizeOfFoundInstructions);
 
-ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
+ZyanBool __zyntercept_cdecl ZynterceptFindNextFunctionBranch(
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
     __zyntercept_in ZyanU8 *Buffer,
@@ -80,7 +80,7 @@ ZyanBool __zyntercept_cdecl FindNextFunctionBranch(
     __zyntercept_out ZyanU64 *GreenBranchAddress,
     __zyntercept_out ZyanU64 *RedBranchAddress);
 
-ZyanBool __zyntercept_cdecl FindFunctionBranchs(
+ZyanBool __zyntercept_cdecl ZynterceptFindFunctionBranchs(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
@@ -88,7 +88,7 @@ ZyanBool __zyntercept_cdecl FindFunctionBranchs(
     __zyntercept_out ZydisBranch **FoundBranchs,
     __zyntercept_out ZyanU64 *NumberOfFoundBranchs);
 
-ZyanBool __zyntercept_cdecl HasFunctionBranchDestinationsBetween(
+ZyanBool __zyntercept_cdecl ZynterceptHasFunctionBranchDestinationsBetween(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
     __zyntercept_in ZydisMachineMode MachineMode,
     __zyntercept_in ZydisStackWidth StackWidth,
