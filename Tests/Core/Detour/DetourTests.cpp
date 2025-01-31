@@ -2,12 +2,14 @@
 #include <Zyntercept/Core/Detour/Detour.h>
 #include <Zyntercept/Core/Syscall/Syscall.h>
 
-#ifdef ZYNTERCEPT_WINDOWS
+#if defined(ZYNTERCEPT_WINDOWS)
 #include <Windows.h>
+static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 #endif
 
-#ifdef ZYNTERCEPT_WINDOWS
-static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#if defined(ZYNTERCEPT_UNIX)
+#include <unistd.h>
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
 #endif
 
 SCENARIO("Detouring a 64-bit function with Zyntercept", "[detour]")

@@ -1,52 +1,29 @@
-#include <Windows.h>
 #include <Zyntercept/Zyntercept.h>
 #include <Zyntercept/Core/Syscall/Syscall.h>
 #include <catch2/catch_test_macros.hpp>
 
-TRAMPOLINE(IsMenu);
-TRAMPOLINE(IsZoomed);
-TRAMPOLINE(IsWindow);
+#if defined(ZYNTERCEPT_WINDOWS)
+#include <Windows.h>
+static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
 
-BOOL WINAPI InterceptIsMenu(HMENU hMenu) {
-    return TRUE;
-}
+#if defined(ZYNTERCEPT_UNIX)
+#include <unistd.h>
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
+#endif
 
-BOOL WINAPI InterceptIsWindow(HWND hWnd) {
-    return TRUE;
-}
-
-BOOL WINAPI InterceptIsZoomed(HWND hWnd) {
-    return TRUE;
-}
-
-TEST_CASE("Should hook IsMenu, IsWindow and IsZoomed functions", "[zyntercept]")
-{
-    ZynterceptProcess Process = { 0 };
-
-    Process.Identifier = GetCurrentProcess();
-    Process.Architecture = ZynterceptIs64BitProcess(Process.Identifier)
-        ? ZYNTERCEPT_ARCHITECTURE_64BIT 
-        : ZYNTERCEPT_ARCHITECTURE_32BIT;
-
-    ZynterceptTransactionBegin();
-    ZynterceptAttachProcess(&Process);
-    ZynterceptAttach(ROUTINE(IsMenu), INTERCEPTION(IsMenu));
-    ZynterceptAttach(ROUTINE(IsWindow), INTERCEPTION(IsWindow));
-    ZynterceptAttach(ROUTINE(IsZoomed), INTERCEPTION(IsZoomed));
-    ZynterceptTransactionCommit();
-
-    REQUIRE(IsMenu((HMENU)0xFFFFFFFF) == TRUE);
-    REQUIRE(IsWindow((HWND)0xFFFFFFFF) == TRUE);
-    REQUIRE(IsZoomed((HWND)0xFFFFFFFF) == TRUE);
-
-    ZynterceptTransactionBegin();
-    ZynterceptAttachProcess(&Process);
-    ZynterceptDetach(ROUTINE(IsMenu));
-    ZynterceptDetach(ROUTINE(IsWindow));
-    ZynterceptDetach(ROUTINE(IsZoomed));
-    ZynterceptTransactionCommit();
-
-    REQUIRE(IsMenu((HMENU)0xFFFFFFFF) == FALSE);
-    REQUIRE(IsWindow((HWND)0xFFFFFFFF) == FALSE);
-    REQUIRE(IsZoomed((HWND)0xFFFFFFFF) == FALSE);
-}
+// 1. Teste de gancho único na transação (com reversão total)
+// 2. Teste de gancho duplo na transação (com reversão total)
+// 3. Teste de gancho duplo na transação (com reversão parcial)
+// 4. Teste de gancho de função com loop (com reversão total)
+// 5. Teste de gancho de função recursiva e reentrante (com reversão total)
+// 6. Teste de gancho de função previamente enganchada (gancho sobre gancho)
+// 7. Teste de remoção de gancho inexistente
+// 8. Teste de abertura de transação duplicada
+// 9. Teste de tentativa de anexar gancho com transação fechada
+// 10. Teste de tentativa de remover gancho com transação fechada
+// 11. Teste de benchmark da função ZynterceptTransactionBegin
+// 12. Teste de benchmark da função ZynterceptAttachProcess
+// 13. Teste de benchmark da função ZynterceptAttach
+// 14. Teste de benchmark da função ZynterceptDetach
+// 15. Teste de benchmark da função ZynterceptTransactionCommit

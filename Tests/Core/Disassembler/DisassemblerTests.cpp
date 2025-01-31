@@ -4,10 +4,12 @@
 
 #if defined(ZYNTERCEPT_WINDOWS)
 #include <Windows.h>
+static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 #endif
 
-#if defined(ZYNTERCEPT_WINDOWS)
-static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#if defined(ZYNTERCEPT_UNIX)
+#include <unistd.h>
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
 #endif
 
 TEST_CASE("Check if IsRelative recognize <jmp dword ptr 0xaabbccd9> as relative instruction", "[disassembler]") {

@@ -192,6 +192,92 @@ NTSTATUS NtFlushInstructionCache(
 	return Invoke(ProcessHandle, BaseAddress, Length);
 }
 
+ZyanBool __zyntercept_cdecl ZynterceptMapPageProtectionFromWindows(
+	__zyntercept_in DWORD WindowsPageProtection, 
+	__zyntercept_out ZyanU32* ZynterceptPageProtection)
+{
+	static std::map<DWORD, ZyanU32> ProtectionMap = {
+		{ PAGE_NOACCESS, ZYNTERCEPT_PAGE_PROTECTION_NONE },
+		{ PAGE_READONLY, ZYNTERCEPT_PAGE_PROTECTION_READ },
+		{ PAGE_READWRITE, ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE },
+		{ PAGE_WRITECOPY, ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_READ },
+		{ PAGE_EXECUTE, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE },
+		{ PAGE_EXECUTE_READ, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_READ },
+		{ PAGE_EXECUTE_READWRITE, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE },
+		{ PAGE_EXECUTE_WRITECOPY, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_READ }
+	};
+
+	if (ProtectionMap.count(WindowsPageProtection) == 0) {
+		return ZYAN_FALSE;
+	}
+
+	*ZynterceptPageProtection = ProtectionMap[WindowsPageProtection];
+
+	return ZYAN_TRUE;
+}
+
+ZyanBool __zyntercept_cdecl ZynterceptMapPageProtectionToWindows(
+	__zyntercept_in ZyanU32 ZynterceptPageProtection,
+	__zyntercept_out DWORD* WindowsPageProtection)
+{
+	static std::map<ZyanU32, ULONG> ProtectionMap = {
+		{ ZYNTERCEPT_PAGE_PROTECTION_NONE, PAGE_NOACCESS },
+		{ ZYNTERCEPT_PAGE_PROTECTION_READ, PAGE_READONLY },
+		{ ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE },
+		{ ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READWRITE },
+		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE, PAGE_READWRITE },
+		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READ },
+		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READWRITE }
+	};
+
+	if (ProtectionMap.count(ZynterceptPageProtection) == 0) {
+		return ZYAN_FALSE;
+	}
+
+	*WindowsPageProtection = ProtectionMap[ZynterceptPageProtection];
+
+	return ZYAN_TRUE;
+}
+
+ZyanBool __zyntercept_cdecl ZynterceptMapPageStateFromWindows(
+	__zyntercept_in DWORD WindowsPageState,
+	__zyntercept_out ZyanU32* ZynterceptPageState)
+{
+	static std::map<DWORD, ZyanU32> StateMap = {
+		{ MEM_FREE, ZYNTERCEPT_PAGE_STATE_FREE },
+		{ MEM_COMMIT, ZYNTERCEPT_PAGE_STATE_COMMITTED },
+		{ MEM_RESERVE, ZYNTERCEPT_PAGE_STATE_RESERVED }
+	};
+
+	if (StateMap.count(WindowsPageState) == 0) {
+		return ZYAN_FALSE;
+	}
+
+	*ZynterceptPageState = StateMap[WindowsPageState];
+
+	return ZYAN_TRUE;
+}
+
+ZyanBool __zyntercept_cdecl ZynterceptMapPageStateToWindows(
+	__zyntercept_in ZyanU32 ZynterceptPageState,
+	__zyntercept_out DWORD* WindowsPageState)
+{
+	static std::map<DWORD, ZyanU32> StateMap = {
+		{ ZYNTERCEPT_PAGE_STATE_FREE, MEM_FREE },
+		{ ZYNTERCEPT_PAGE_STATE_COMMITTED, MEM_COMMIT },
+		{ ZYNTERCEPT_PAGE_STATE_RESERVED, MEM_RESERVE },
+		{ ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED, MEM_RESERVE | MEM_COMMIT }
+	};
+
+	if (StateMap.count(ZynterceptPageState) == 0) {
+		return ZYAN_FALSE;
+	}
+
+	*WindowsPageState = StateMap[ZynterceptPageState];
+
+	return ZYAN_TRUE;
+}
+
 ZyanBool __zyntercept_cdecl ZynterceptIs64BitSystemWindows()
 {
 	static bool IsCached = false;
@@ -273,8 +359,13 @@ ZyanBool __zyntercept_cdecl ZynterceptIsCurrentProcessWindows(
 ZyanBool __zyntercept_cdecl ZynterceptVirtualMemoryInformationWindows(
 	__zyntercept_out ZynterceptPagedMemoryInformation* Information)
 {
-	SYSTEM_INFO SystemInfo = { 0 };
-	GetSystemInfo(&SystemInfo);
+	static bool IsCached = false;
+	static SYSTEM_INFO SystemInfo = { 0 };
+
+	if (!IsCached) {
+		GetSystemInfo(&SystemInfo);
+		IsCached = true;
+	}
 
 	Information->Ring3LowestAddress = (ZyanU64)SystemInfo.lpMinimumApplicationAddress;
 	Information->Ring3HighestAddress = (ZyanU64)SystemInfo.lpMaximumApplicationAddress;
@@ -288,29 +379,16 @@ ZyanU64 __zyntercept_cdecl ZynterceptAllocateMemoryWindows(
 	__zyntercept_in ZyanVoidPointer ProcessIdentifier,
 	__zyntercept_in ZynterceptPagedMemory* Page)
 {
+	DWORD PageState = 0;
+	DWORD PageProtection = 0;
+
 	if (ZynterceptIsUnsupportedProcessArchitectureWindows(ProcessIdentifier))
 	{
 		return 0;
 	}
 
-	std::map<DWORD, ZyanU32> States = {
-		{ ZYNTERCEPT_PAGE_STATE_FREE, MEM_FREE },
-		{ ZYNTERCEPT_PAGE_STATE_COMMITTED, MEM_COMMIT },
-		{ ZYNTERCEPT_PAGE_STATE_RESERVED, MEM_RESERVE },
-		{ ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED, MEM_RESERVE | MEM_COMMIT }
-	};
-
-	std::map<ZyanU32, ULONG> Protections = {
-		{ ZYNTERCEPT_PAGE_PROTECTION_NONE, PAGE_NOACCESS },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ, PAGE_READONLY },
-		{ ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE },
-		{ ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READWRITE },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE, PAGE_READWRITE },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READ },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READWRITE }
-	};
-
-	if (States.count(Page->State) == 0 || Protections.count(Page->Protection) == 0)
+	if (!ZynterceptMapPageStateToWindows(Page->State, &PageState) ||
+		!ZynterceptMapPageProtectionToWindows(Page->Protection, &PageProtection))
 	{
 		return 0;
 	}
@@ -318,8 +396,8 @@ ZyanU64 __zyntercept_cdecl ZynterceptAllocateMemoryWindows(
 	HANDLE ProcessHandle = (HANDLE)ProcessIdentifier;
 	PVOID BaseAddress = ZYNTERCEPT_CAST_INTEGER(PVOID, ProcessIdentifier, Page->Address);
 	SIZE_T RegionSize = ZYNTERCEPT_CAST_INTEGER(SIZE_T, ProcessIdentifier, Page->Size);
-	ULONG AllocationType = States[Page->State];
-	ULONG Protect = Protections[Page->Protection];
+	ULONG AllocationType = PageState;
+	ULONG Protect = PageProtection;
 
 	NTSTATUS Status = NtAllocateVirtualMemory(
 		ProcessHandle, &BaseAddress, NULL, &RegionSize, AllocationType, Protect);
@@ -362,33 +440,14 @@ ZyanBool __zyntercept_cdecl ZynterceptProtectMemoryWindows(
 	__zyntercept_in ZyanVoidPointer ProcessIdentifier,
 	__zyntercept_in ZynterceptPagedMemory* Page)
 {
+	DWORD NewPageProtection = 0;
+
 	if (ZynterceptIsUnsupportedProcessArchitectureWindows(ProcessIdentifier))
 	{
 		return ZYAN_FALSE;
 	}
 
-	std::map<ZyanU32, ULONG> Protections = {
-		{ ZYNTERCEPT_PAGE_PROTECTION_NONE, PAGE_NOACCESS },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ, PAGE_READONLY },
-		{ ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE },
-		{ ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READWRITE },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE, PAGE_READWRITE },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READ },
-		{ ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE, PAGE_EXECUTE_READWRITE }
-	};
-
-	std::map<DWORD, ZyanU32> OldProtections = {
-		{ PAGE_NOACCESS, ZYNTERCEPT_PAGE_PROTECTION_NONE },
-		{ PAGE_READONLY, ZYNTERCEPT_PAGE_PROTECTION_READ },
-		{ PAGE_READWRITE, ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE },
-		{ PAGE_WRITECOPY, ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_READ },
-		{ PAGE_EXECUTE, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE },
-		{ PAGE_EXECUTE_READ, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_READ },
-		{ PAGE_EXECUTE_READWRITE, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE },
-		{ PAGE_EXECUTE_WRITECOPY, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_READ }
-	};
-
-	if (Protections.count(Page->Protection) == 0)
+	if (!ZynterceptMapPageProtectionToWindows(Page->Protection, &NewPageProtection))
 	{
 		return ZYAN_FALSE;
 	}
@@ -396,7 +455,7 @@ ZyanBool __zyntercept_cdecl ZynterceptProtectMemoryWindows(
 	HANDLE ProcessHandle = (HANDLE)ProcessIdentifier;
 	PVOID BaseAddress = ZYNTERCEPT_CAST_INTEGER(PVOID, ProcessIdentifier, Page->Address);
 	SIZE_T RegionSize = ZYNTERCEPT_CAST_INTEGER(SIZE_T, ProcessIdentifier, Page->Size);
-	ULONG NewProtect = Protections[Page->Protection];
+	ULONG NewProtect = NewPageProtection;
 	ULONG OldProtect = NULL;
 
 	NTSTATUS Status = NtProtectVirtualMemory(
@@ -407,12 +466,15 @@ ZyanBool __zyntercept_cdecl ZynterceptProtectMemoryWindows(
 		return ZYAN_FALSE;
 	}
 
-	if (OldProtections.count(OldProtect) == 0)
+	if (!ZynterceptMapPageProtectionFromWindows(OldProtect, &Page->Protection))
 	{
 		return ZYAN_FALSE;
 	}
 
-	Page->Protection = OldProtections[OldProtect];
+	if (Page->Protection & ZYNTERCEPT_PAGE_PROTECTION_EXECUTE)
+	{
+		ZYNTERCEPT_UNREFERENCED(ZynterceptFlushMicroprocessorCacheWindows(ProcessIdentifier, Page));
+	}
 
 	return ZYAN_TRUE;
 }
@@ -431,23 +493,6 @@ ZyanBool __zyntercept_cdecl ZynterceptQueryMemoryWindows(
 	SIZE_T ReturnLength = 0;
 
 	MEMORY_BASIC_INFORMATION MemoryInfo = { 0 };
-
-	std::map<DWORD, ZyanU32> States = {
-		{ MEM_FREE, ZYNTERCEPT_PAGE_STATE_FREE },
-		{ MEM_COMMIT, ZYNTERCEPT_PAGE_STATE_COMMITTED },
-		{ MEM_RESERVE, ZYNTERCEPT_PAGE_STATE_RESERVED }
-	};
-
-	std::map<DWORD, ZyanU32> Protections = {
-		{ PAGE_NOACCESS, ZYNTERCEPT_PAGE_PROTECTION_NONE },
-		{ PAGE_READONLY, ZYNTERCEPT_PAGE_PROTECTION_READ },
-		{ PAGE_READWRITE, ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE },
-		{ PAGE_WRITECOPY, ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_READ },
-		{ PAGE_EXECUTE, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE },
-		{ PAGE_EXECUTE_READ, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_READ },
-		{ PAGE_EXECUTE_READWRITE, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE },
-		{ PAGE_EXECUTE_WRITECOPY, ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_WRITE | ZYNTERCEPT_PAGE_PROTECTION_READ }
-	};
 
 	NTSTATUS Status = NtQueryVirtualMemory(
 		ProcessHandle,
@@ -477,14 +522,10 @@ ZyanBool __zyntercept_cdecl ZynterceptQueryMemoryWindows(
 	MemoryInfo.Protect = MemoryInfo.Protect & ~PAGE_TARGETS_INVALID;
 	MemoryInfo.Protect = MemoryInfo.Protect & ~PAGE_TARGETS_NO_UPDATE;
 
-	if (States.count(MemoryInfo.State) != 0)
+	if (!ZynterceptMapPageStateFromWindows(MemoryInfo.State, &Page->State) || 
+		!ZynterceptMapPageProtectionFromWindows(MemoryInfo.Protect, &Page->Protection))
 	{
-		Page->State = States[MemoryInfo.State];
-	}
-
-	if (Protections.count(MemoryInfo.Protect) != 0)
-	{
-		Page->Protection = Protections[MemoryInfo.Protect];
+		return ZYAN_FALSE;
 	}
 
 	/* It's useless for our purpose */
@@ -510,7 +551,7 @@ ZyanBool __zyntercept_cdecl ZynterceptWriteMemoryWindows(
 
 	if (ZynterceptIsCurrentProcessWindows(ProcessIdentifier))
 	{
-		memcpy(BaseAddress, Buffer, NumberOfBytesToWrite);
+		std::memcpy(BaseAddress, Buffer, NumberOfBytesToWrite);
 		return ZYAN_TRUE;
 	}
 
@@ -544,7 +585,7 @@ ZyanBool __zyntercept_cdecl ZynterceptReadMemoryWindows(
 
 	if (ZynterceptIsCurrentProcessWindows(ProcessIdentifier))
 	{
-		memcpy(Buffer, BaseAddress, NumberOfBytesToRead);
+		std::memcpy(Buffer, BaseAddress, NumberOfBytesToRead);
 		return ZYAN_TRUE;
 	}
 
@@ -610,7 +651,7 @@ ZyanBool __zyntercept_cdecl ZynterceptAtomicWriteMemoryWindows(
 
 		Operation.Address = Operations[Offset].Address;
 		Operation.Size = Operations[Offset].Size;
-		Operation.Buffer = (ZyanU8*)malloc(Operations[Offset].Size & 0xFFFFFFFFUL);
+		Operation.Buffer = (ZyanU8*)std::malloc(Operations[Offset].Size & 0xFFFFFFFFUL);
 
 		if (!Operation.Buffer) {
 			goto REVERT_PARTIAL_CHANGES;
@@ -619,7 +660,7 @@ ZyanBool __zyntercept_cdecl ZynterceptAtomicWriteMemoryWindows(
 		ZyanBool Status = ZynterceptReadMemoryWindows(ProcessIdentifier, &Operation);
 
 		if (!Status) {
-			free(Operation.Buffer);
+			std::free(Operation.Buffer);
 
 			goto REVERT_PARTIAL_CHANGES;
 		}
@@ -644,7 +685,7 @@ ZyanBool __zyntercept_cdecl ZynterceptAtomicWriteMemoryWindows(
 
 	// Free all read buffers
 	for (const auto& ReadOperation : ReadOperations) {
-		free(ReadOperation.Buffer);
+		std::free(ReadOperation.Buffer);
 	}
 
 	Pages.clear();
@@ -667,7 +708,7 @@ REVERT_PARTIAL_CHANGES:
 
 	// Free all read buffers
 	for (const auto& ReadOperation : ReadOperations) {
-		free(ReadOperation.Buffer);
+		std::free(ReadOperation.Buffer);
 	}
 
 	Pages.clear();

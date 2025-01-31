@@ -4,6 +4,12 @@
 
 #if defined(ZYNTERCEPT_WINDOWS)
 #include <Windows.h>
+static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#endif
+
+#if defined(ZYNTERCEPT_UNIX)
+#include <unistd.h>
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
 #endif
 
 SCENARIO("Zyntercept memory allocation near a target address", "[allocator]")
@@ -18,10 +24,6 @@ SCENARIO("Zyntercept memory allocation near a target address", "[allocator]")
 		ZyanU32 AllocationProtection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
 		ZyanU64 AllocationGranularity = 0x10000ULL;
 		ZynterceptPagedMemory Page = { 0 };
-
-#if defined(ZYNTERCEPT_WINDOWS)
-		ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
 
 		Page.Address = ZynterceptAllocateNearPage(
 			ProcessIdentifier,
@@ -94,10 +96,6 @@ SCENARIO("Zyntercept memory allocation near a higher target address", "[allocato
 		ZyanU64 AllocationGranularity = 0x10000ULL;
 		ZynterceptPagedMemory Page = { 0 };
 
-#if defined(ZYNTERCEPT_WINDOWS)
-		ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
-
 		Page.Address = ZynterceptAllocateNearUpperPage(
 			ProcessIdentifier,
 			TargetAddress,
@@ -169,10 +167,6 @@ SCENARIO("Zyntercept memory allocation near a lower target address", "[allocator
 		ZyanU64 AllocationGranularity = 0x10000ULL;
 		ZYNTERCEPT_PAGED_MEMORY Page = { 0 };
 
-#ifdef ZYNTERCEPT_WINDOWS
-		ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
-
 		Page.Address = ZynterceptAllocateNearLowerPage(
 			ProcessIdentifier,
 			TargetAddress,
@@ -240,10 +234,6 @@ SCENARIO("Zyntercept memory allocation at the nearest address to the target addr
 		ZyanU32 AllocationType = ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED;
 		ZyanU32 AllocationProtection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
 		ZYNTERCEPT_PAGED_MEMORY Page = { 0 };
-
-#ifdef ZYNTERCEPT_WINDOWS
-		ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
-#endif
 
 		Page.Address = ZynterceptAllocateNearestAddress(
 			ProcessIdentifier,

@@ -15,11 +15,10 @@ struct ZynterceptInterception {
 	uint64_t OriginalPrologueSize;
 	ZynterceptProcess Process;
 
-	bool operator==(const ZynterceptInterception& Value) const
-	{
-		return Value.TargetRoutine == TargetRoutine && 
-			Value.InterceptionRoutine == InterceptionRoutine && 
-			Value.OriginalRoutine == OriginalRoutine;
+	bool operator==(const ZynterceptInterception& Value) const 	{
+		return Value.TargetRoutine == TargetRoutine &&
+			Value.OriginalRoutine == OriginalRoutine &&
+			Value.InterceptionRoutine == InterceptionRoutine;
 	}
 };
 
@@ -31,28 +30,24 @@ static std::mutex TransactionMutex;
 static std::atomic<bool> TransactionIsOpen(false);
 static ZynterceptProcess TransactionCurrentProcess = { 0 };
 
-bool ZynterceptTransactionBegin()
-{
+bool ZynterceptTransactionBegin() {
 	// Lock the transaction objects
 	std::lock_guard<std::mutex> Guard(TransactionMutex);
 
-	if (std::atomic_load(&TransactionIsOpen) == true) {
-		// Already has a transaction in progress
+	if (TransactionIsOpen) {
 		return false;
 	}
 
-	// Atomically set the transaction status as open
-	std::atomic_exchange(&TransactionIsOpen, true);
+	TransactionIsOpen = true;
 
 	return true;
 }
 
-bool ZynterceptTransactionCommit()
-{
+bool ZynterceptTransactionCommit() {
 	// Lock the transaction objects
 	std::lock_guard<std::mutex> Guard(TransactionMutex);
 
-	if (std::atomic_load(&TransactionIsOpen) == false) {
+	if (!TransactionIsOpen) {
 		return false;
 	}
 
@@ -250,17 +245,19 @@ bool ZynterceptTransactionCommit()
 		}
 	}
 
-	// Atomically set the transaction status as closed
-	std::atomic_exchange(&TransactionIsOpen, false);
+	TransactionIsOpen = false;
 	std::memset(&TransactionCurrentProcess, 0, sizeof(TransactionCurrentProcess));
 
 	return true;
 }
 
-bool ZynterceptAttachProcess(ZynterceptProcess* Process)
-{
+bool ZynterceptAttachProcess(ZynterceptProcess* Process) {
 	// Lock the transaction objects
 	std::lock_guard<std::mutex> Guard(TransactionMutex);
+
+	if (!TransactionIsOpen) {
+		return false;
+	}
 
 	if (!Process || !Process->Identifier) {
 		return false;
@@ -272,11 +269,11 @@ bool ZynterceptAttachProcess(ZynterceptProcess* Process)
 	return true;
 }
 
-bool ZynterceptAttach(void** TargetRoutine, void* InterceptionRoutine){
+bool ZynterceptAttach(void** TargetRoutine, void* InterceptionRoutine) {
 	// Lock the transaction objects
 	std::lock_guard<std::mutex> Guard(TransactionMutex);
 
-	if (std::atomic_load(&TransactionIsOpen) == false) {
+	if (!TransactionIsOpen) {
 		return false;
 	}
 
@@ -292,12 +289,11 @@ bool ZynterceptAttach(void** TargetRoutine, void* InterceptionRoutine){
 	return true;
 }
 
-bool ZynterceptDetach(void** TargetRoutine)
-{
+bool ZynterceptDetach(void** TargetRoutine) {
 	// Lock the transaction objects
 	std::lock_guard<std::mutex> Guard(TransactionMutex);
 
-	if (std::atomic_load(&TransactionIsOpen) == false) {
+	if (!TransactionIsOpen) {
 		return false;
 	}
 

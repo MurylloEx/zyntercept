@@ -1,12 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 #include <Zyntercept/Core/Syscall/Syscall.h>
 
-#ifdef ZYNTERCEPT_WINDOWS
+#if defined(ZYNTERCEPT_WINDOWS)
 #include <Windows.h>
+static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 #endif
 
-#ifdef ZYNTERCEPT_WINDOWS
-static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
+#if defined(ZYNTERCEPT_UNIX)
+#include <unistd.h>
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
 #endif
 
 SCENARIO("Verify system architecture", "[syscall]")
