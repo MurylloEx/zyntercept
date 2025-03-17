@@ -197,6 +197,7 @@ ZyanBool __zyntercept_cdecl ZynterceptMapPageProtectionFromWindows(
 	__zyntercept_out ZyanU32* ZynterceptPageProtection)
 {
 	static std::map<DWORD, ZyanU32> ProtectionMap = {
+		{ NULL, ZYNTERCEPT_PAGE_PROTECTION_NONE },
 		{ PAGE_NOACCESS, ZYNTERCEPT_PAGE_PROTECTION_NONE },
 		{ PAGE_READONLY, ZYNTERCEPT_PAGE_PROTECTION_READ },
 		{ PAGE_READWRITE, ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE },
@@ -304,18 +305,17 @@ ZyanBool __zyntercept_cdecl ZynterceptIs32BitSystemWindows()
 ZyanBool __zyntercept_cdecl ZynterceptIs32BitProcessWindows(
 	__zyntercept_in ZyanVoidPointer ProcessIdentifier)
 {
-	if (ZynterceptIs32BitSystemWindows())
-	{
-		return ZYAN_TRUE;
-	}
+	DWORD LastError = GetLastError();
+	BOOL Is32BitProcess = FALSE;
 
-	if (ProcessIdentifier == CURRENT_PROCESS_IDENTIFIER)
-	{
+	if (ProcessIdentifier == CURRENT_PROCESS_IDENTIFIER) {
 		return sizeof(void*) == 4 ? ZYAN_TRUE : ZYAN_FALSE;
 	}
 
-	DWORD LastError = GetLastError();
-	BOOL Is32BitProcess = FALSE;
+	if (ZynterceptIs32BitSystemWindows()) {
+		return ZYAN_TRUE;
+	}
+
 	UNREFERENCED_PARAMETER(IsWow64Process((HANDLE)ProcessIdentifier, &Is32BitProcess));
 	SetLastError(LastError);
 
@@ -510,10 +510,10 @@ ZyanBool __zyntercept_cdecl ZynterceptQueryMemoryWindows(
 	Page->State = 0;
 	Page->Protection = 0;
 	Page->Size = (ZyanU64)MemoryInfo.RegionSize;
-	Page->Address = (ZyanU64)MemoryInfo.AllocationBase;
-
+	Page->Address = (ZyanU64)MemoryInfo.BaseAddress;
+	
 	if (!Page->Address) {
-		Page->Address = (ZyanU64)MemoryInfo.BaseAddress;
+		Page->Address = (ZyanU64)MemoryInfo.AllocationBase;
 	}
 
 	MemoryInfo.Protect = MemoryInfo.Protect & ~PAGE_GUARD;
@@ -637,7 +637,7 @@ ZyanBool __zyntercept_cdecl ZynterceptAtomicWriteMemoryWindows(
 
 		Page.Address = Operations[Offset].Address;
 		Page.Size = Operations[Offset].Size;
-		Page.Protection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
+		Page.Protection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_EXECUTE | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
 
 		if (!ZynterceptProtectMemoryWindows(ProcessIdentifier, &Page)) {
 			goto REVERT_PARTIAL_CHANGES;
