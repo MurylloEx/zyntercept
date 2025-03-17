@@ -1,7 +1,7 @@
 #ifndef ZYNTERCEPT_ALLOCATOR_H
 #define ZYNTERCEPT_ALLOCATOR_H
 
-#include <Zyntercept/Core/Syscall/Syscall.h>
+#include <Zyntercept/Core/Common/Common.h>
 
 ZyanU64 __zyntercept_cdecl ZynterceptAllocateNearLowerPage(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,

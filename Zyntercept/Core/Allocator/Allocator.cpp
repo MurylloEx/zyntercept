@@ -1,4 +1,5 @@
 #include <Zyntercept/Core/Allocator/Allocator.h>
+#include <Zyntercept/Core/Syscall/Syscall.h>
 
 ZyanU64 __zyntercept_cdecl ZynterceptAllocateNearLowerPage(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
@@ -11,34 +12,38 @@ ZyanU64 __zyntercept_cdecl ZynterceptAllocateNearLowerPage(
     __zyntercept_in ZyanU32 AllocationGranularity)
 {
     ZynterceptPagedMemory Page = { 0 };
-    ZyanU64 CurrentAddress = Address;
 
-    CurrentAddress -= CurrentAddress % AllocationGranularity;
-    CurrentAddress -= AllocationGranularity;
+    Page.Address = Address;
+    Page.Address -= Page.Address % AllocationGranularity;
+    Page.Address -= AllocationGranularity;
 
-    Page.Address = CurrentAddress;
-
-    while (ZynterceptQueryMemory(ProcessIdentifier, &Page))
+    while (true)
     {
-        if (!ZYNTERCEPT_IS_POINTER_BETWEEN(CurrentAddress, MaxAddress, MinAddress)) {
+        if (!ZYNTERCEPT_IS_POINTER_BETWEEN(Page.Address, MaxAddress, MinAddress)) {
             break;
         }
 
-        if (!ZYNTERCEPT_IS_POINTER_BETWEEN(CurrentAddress, MaxAddress, AllocationGranularity)) {
+        if (!ZYNTERCEPT_IS_POINTER_BETWEEN(Page.Address, MaxAddress, AllocationGranularity)) {
+            break;
+        }
+
+        if (!ZynterceptQueryMemory(ProcessIdentifier, &Page)) {
             break;
         }
 
         if (Page.State == ZYNTERCEPT_PAGE_STATE_FREE) {
-            Page.Address = CurrentAddress;
             Page.Size = AllocationSize;
             Page.Protection = AllocationProtection;
             Page.State = ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED;
 
-            return ZynterceptAllocateMemory(ProcessIdentifier, &Page);
+            ZyanU64 AllocationAddress = ZynterceptAllocateMemory(ProcessIdentifier, &Page);
+
+            if (AllocationAddress) {
+                return AllocationAddress;
+            }
         }
 
-        CurrentAddress -= AllocationGranularity;
-        Page.Address = CurrentAddress;
+        Page.Address -= AllocationGranularity;
     }
 
     return 0;
@@ -55,33 +60,40 @@ ZyanU64 __zyntercept_cdecl ZynterceptAllocateNearUpperPage(
     __zyntercept_in ZyanU32 AllocationGranularity)
 {
     ZynterceptPagedMemory Page = { 0 };
-    ZyanU64 CurrentAddress = Address;
 
-    CurrentAddress -= CurrentAddress % AllocationGranularity;
-    CurrentAddress += AllocationGranularity;
+    Page.Address = Address;
+    Page.Address -= Page.Address % static_cast<ZyanU64>(AllocationGranularity);
+    Page.Address += static_cast<ZyanU64>(AllocationGranularity);
 
-    Page.Address = CurrentAddress;
-
-    while (ZynterceptQueryMemory(ProcessIdentifier, &Page))
+    while (true)
     {
         if (!ZYNTERCEPT_IS_POINTER_BETWEEN(Page.Address, MaxAddress, MinAddress)) {
             break;
         }
 
+        if (!ZYNTERCEPT_IS_POINTER_BETWEEN(Page.Address, MaxAddress, AllocationGranularity)) {
+            break;
+        }
+
+        if (!ZynterceptQueryMemory(ProcessIdentifier, &Page)) {
+            break;
+        }
+
         if (Page.State == ZYNTERCEPT_PAGE_STATE_FREE) {
-            Page.Address = CurrentAddress;
             Page.Size = AllocationSize;
             Page.Protection = AllocationProtection;
             Page.State = ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED;
 
-            return ZynterceptAllocateMemory(ProcessIdentifier, &Page);
+            ZyanU64 AllocationAddress = ZynterceptAllocateMemory(ProcessIdentifier, &Page);
+
+            if (AllocationAddress) {
+                return AllocationAddress;
+            }
         }
 
-        CurrentAddress = Page.Address + Page.Size;
-        CurrentAddress += static_cast<ZyanU64>(AllocationGranularity) - 1;
-        CurrentAddress -= CurrentAddress % AllocationGranularity;
-
-        Page.Address = CurrentAddress;
+        Page.Address = Page.Address + Page.Size;
+        Page.Address += static_cast<ZyanU64>(AllocationGranularity) - 1;
+        Page.Address -= Page.Address % static_cast<ZyanU64>(AllocationGranularity);
     }
 
     return 0;
