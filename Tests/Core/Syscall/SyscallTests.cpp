@@ -11,7 +11,7 @@ static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
 #endif
 
-SCENARIO("Verify system architecture", "[syscall]")
+SCENARIO("Zyntercept system architecture detection", "[syscall]")
 {
     GIVEN("I want to verify the system's architecture")
     {
@@ -43,7 +43,7 @@ SCENARIO("Verify system architecture", "[syscall]")
     }
 }
 
-SCENARIO("Verify process architecture", "[syscall]")
+SCENARIO("Zyntercept process architecture detection", "[syscall]")
 {
     GIVEN("A specific process identifier")
     {
@@ -55,7 +55,7 @@ SCENARIO("Verify process architecture", "[syscall]")
             }
         }
 
-        WHEN("I check if the process is the current process")
+        AND_WHEN("I check if the process is the current process")
         {
             THEN("It should confirm whether the process is the current process")
             {
@@ -65,7 +65,7 @@ SCENARIO("Verify process architecture", "[syscall]")
     }
 }
 
-SCENARIO("Query virtual memory information", "[syscall]")
+SCENARIO("Zyntercept virtual memory information query", "[syscall]")
 {
     GIVEN("I want to query virtual memory information")
     {
@@ -84,7 +84,7 @@ SCENARIO("Query virtual memory information", "[syscall]")
     }
 }
 
-SCENARIO("Memory allocation and management", "[syscall]")
+SCENARIO("Zyntercept memory allocation and management", "[syscall]")
 {
     GIVEN("I want to allocate memory")
     {
@@ -175,7 +175,7 @@ SCENARIO("Memory allocation and management", "[syscall]")
     }
 }
 
-SCENARIO("Memory read and write operations", "[syscall]")
+SCENARIO("Zyntercept memory read and write operations", "[syscall]")
 {
     ZynterceptPagedMemory Page = { 0 };
 
@@ -223,7 +223,7 @@ SCENARIO("Memory read and write operations", "[syscall]")
     REQUIRE(ZynterceptReleaseMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
 }
 
-SCENARIO("Flush microprocessor cache", "[syscall]")
+SCENARIO("Zyntercept flush microprocessor cache", "[syscall]")
 {
     GIVEN("I want to flush the microprocessor cache for a memory page")
     {
@@ -248,7 +248,7 @@ SCENARIO("Flush microprocessor cache", "[syscall]")
     }
 }
 
-SCENARIO("Atomic memory write operations", "[syscall]")
+SCENARIO("Zyntercept atomic memory write operations", "[syscall]")
 {
     GIVEN("I want to perform atomic memory writes")
     {
