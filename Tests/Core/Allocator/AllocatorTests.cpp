@@ -14,9 +14,9 @@ static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
 
 SCENARIO("Zyntercept memory allocation near a target address", "[allocator]")
 {
-	GIVEN("I want to allocate memory near a target address")
+	GIVEN("A minimum and maximum range of valid addresses and a specific allocation size, type, and protection")
 	{
-		ZyanU64 TargetAddress = 0x7ffee000ULL;
+		ZyanU64 TargetAddress = 0x70000000ULL;
 		ZyanU64 MinAddress = 0x10000000ULL;
 		ZyanU64 MaxAddress = 0x7fffffffULL;
 		ZyanU64 AllocationSize = 0x1000ULL;
@@ -25,20 +25,20 @@ SCENARIO("Zyntercept memory allocation near a target address", "[allocator]")
 		ZyanU64 AllocationGranularity = 0x10000ULL;
 		ZynterceptPagedMemory Page = { 0 };
 
-		Page.Address = ZynterceptAllocateNearPage(
-			ProcessIdentifier,
-			TargetAddress,
-			MinAddress,
-			MaxAddress,
-			AllocationSize,
-			AllocationType,
-			AllocationProtection,
-			AllocationGranularity);
-
-		REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
-
-		AND_GIVEN("A minimum and maximum range of valid addresses and a specific allocation size, type, and protection")
+		AND_GIVEN("I want to allocate memory near a target address")
 		{
+			Page.Address = ZynterceptAllocateNearPage(
+				ProcessIdentifier,
+				TargetAddress,
+				MinAddress,
+				MaxAddress,
+				AllocationSize,
+				AllocationType,
+				AllocationProtection,
+				AllocationGranularity);
+
+			REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
+
 			WHEN("I allocate the memory using ZynterceptAllocateNearPage")
 			{
 				THEN("The allocation should succeed")
@@ -85,9 +85,9 @@ SCENARIO("Zyntercept memory allocation near a target address", "[allocator]")
 
 SCENARIO("Zyntercept memory allocation near a higher target address", "[allocator]")
 {
-	GIVEN("I want to allocate memory near a target address, but higher than it")
+	GIVEN("A minimum and maximum range of valid addresses and a specific allocation size, type, and protection")
 	{
-		ZyanU64 TargetAddress = 0x7fcee000ULL;
+		ZyanU64 TargetAddress = 0x70000000ULL;
 		ZyanU64 MinAddress = 0x00010000ULL;
 		ZyanU64 MaxAddress = 0x7fffffffULL;
 		ZyanU64 AllocationSize = 0x1000ULL;
@@ -95,21 +95,21 @@ SCENARIO("Zyntercept memory allocation near a higher target address", "[allocato
 		ZyanU32 AllocationProtection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
 		ZyanU64 AllocationGranularity = 0x10000ULL;
 		ZynterceptPagedMemory Page = { 0 };
-
-		Page.Address = ZynterceptAllocateNearUpperPage(
-			ProcessIdentifier,
-			TargetAddress,
-			MinAddress,
-			MaxAddress,
-			AllocationSize,
-			AllocationType,
-			AllocationProtection,
-			AllocationGranularity);
-
-		REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
-
-		AND_GIVEN("A minimum and maximum range of valid addresses and a specific allocation size, type, and protection")
+		
+		AND_GIVEN("I want to allocate memory near a target address, but higher than it")
 		{
+			Page.Address = ZynterceptAllocateNearUpperPage(
+				ProcessIdentifier,
+				TargetAddress,
+				MinAddress,
+				MaxAddress,
+				AllocationSize,
+				AllocationType,
+				AllocationProtection,
+				AllocationGranularity);
+
+			REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
+
 			WHEN("I allocate the memory using ZynterceptAllocateNearUpperPage")
 			{
 				THEN("The allocation should succeed")
@@ -156,9 +156,9 @@ SCENARIO("Zyntercept memory allocation near a higher target address", "[allocato
 
 SCENARIO("Zyntercept memory allocation near a lower target address", "[allocator]")
 {
-	GIVEN("I want to allocate memory near a target address, but lower than it")
+	GIVEN("A minimum and maximum range of valid addresses and a specific allocation size, type, and protection")
 	{
-		ZyanU64 TargetAddress = 0x7ffee000ULL;
+		ZyanU64 TargetAddress = 0x70000000ULL;
 		ZyanU64 MinAddress = 0x10000000ULL;
 		ZyanU64 MaxAddress = 0x7fffffffULL;
 		ZyanU64 AllocationSize = 0x1000ULL;
@@ -167,20 +167,20 @@ SCENARIO("Zyntercept memory allocation near a lower target address", "[allocator
 		ZyanU64 AllocationGranularity = 0x10000ULL;
 		ZYNTERCEPT_PAGED_MEMORY Page = { 0 };
 
-		Page.Address = ZynterceptAllocateNearLowerPage(
-			ProcessIdentifier,
-			TargetAddress,
-			MinAddress,
-			MaxAddress,
-			AllocationSize,
-			AllocationType,
-			AllocationProtection,
-			AllocationGranularity);
-
-		REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
-
-		AND_GIVEN("A minimum and maximum range of valid addresses and a specific allocation size, type, and protection")
+		AND_GIVEN("I want to allocate memory near a target address, but lower than it")
 		{
+			Page.Address = ZynterceptAllocateNearLowerPage(
+				ProcessIdentifier,
+				TargetAddress,
+				MinAddress,
+				MaxAddress,
+				AllocationSize,
+				AllocationType,
+				AllocationProtection,
+				AllocationGranularity);
+
+			REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
+
 			WHEN("I allocate the memory using ZynterceptAllocateNearLowerPage")
 			{
 				THEN("The allocation should succeed")
@@ -227,25 +227,25 @@ SCENARIO("Zyntercept memory allocation near a lower target address", "[allocator
 
 SCENARIO("Zyntercept memory allocation at the nearest address to the target address", "[allocator]")
 {
-	GIVEN("I want to allocate memory at the nearest address to the target address")
+	GIVEN("A specific allocation size, type, and protection")
 	{
-		ZyanU64 TargetAddress = 0x7ffee000ULL;
+		ZyanU64 TargetAddress = 0x70000000ULL;
 		ZyanU64 AllocationSize = 0x1000ULL;
 		ZyanU32 AllocationType = ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED;
 		ZyanU32 AllocationProtection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
 		ZYNTERCEPT_PAGED_MEMORY Page = { 0 };
 
-		Page.Address = ZynterceptAllocateNearestAddress(
-			ProcessIdentifier,
-			TargetAddress,
-			AllocationSize,
-			AllocationType,
-			AllocationProtection);
-
-		REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
-
-		AND_GIVEN("A specific allocation size, type, and protection")
+		AND_GIVEN("I want to allocate memory at the nearest address to the target address")
 		{
+			Page.Address = ZynterceptAllocateNearestAddress(
+				ProcessIdentifier,
+				TargetAddress,
+				AllocationSize,
+				AllocationType,
+				AllocationProtection);
+
+			REQUIRE(ZynterceptQueryMemory(ProcessIdentifier, &Page) == ZYAN_TRUE);
+
 			WHEN("I allocate the memory using ZynterceptAllocateNearestAddress")
 			{
 				THEN("The allocation should succeed")
