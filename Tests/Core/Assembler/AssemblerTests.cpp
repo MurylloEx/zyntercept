@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <Zyntercept/Core/Assembler/Assembler.h>
+#include <Zyntercept/Core/Disassembler/Disassembler.h>
 
 TEST_CASE("AssemblyBuilder should be instantiated without errors", "[assembler]") {
 	REQUIRE_NOTHROW(std::make_unique<AssemblyBuilder>(0x7ffffd50ULL));
