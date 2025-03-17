@@ -1,5 +1,4 @@
 #include <Zyntercept/Core/Assembler/Assembler.h>
-#include <Zyntercept/Core/Disassembler/Disassembler.h>
 
 #include <map>
 #include <memory>

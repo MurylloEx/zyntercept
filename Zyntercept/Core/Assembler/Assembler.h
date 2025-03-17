@@ -1,7 +1,9 @@
 #ifndef ZYNTERCEPT_ASSEMBLER_H
 #define ZYNTERCEPT_ASSEMBLER_H
 
+#include <Zyntercept/Core/Common/Common.h>
 #include <Zyntercept/Core/Disassembler/Disassembler.h>
+
 #include <memory>
 #include <vector>
 
