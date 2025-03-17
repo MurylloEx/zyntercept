@@ -436,7 +436,7 @@ ZyanBool __zyntercept_cdecl ZynterceptFindFunctionBranchs(
     /* Size of buffer used to fetch new instructions in memory */
     /* TODO: Review this line and check if this value could be a function argument */
     ZyanUSize BufferSize = 0x400;
-    ZyanU8* Buffer = (ZyanU8*)calloc(BufferSize, sizeof(ZyanU8));
+    ZyanU8* Buffer = (ZyanU8*)malloc(BufferSize * sizeof(ZyanU8));
 
     /* Wtf?! Is the computer out of RAM? Are we running on a potato? */
     if (!Buffer)
@@ -496,7 +496,7 @@ ZyanBool __zyntercept_cdecl ZynterceptFindFunctionBranchs(
         {
             goto FAILURE;
         }
-
+         
         /* Fetch the next function branch (Jmp or Jcc) */
         /* If there's nothing to fetch anymore in this branch, the function returns FALSE */
         if (!ZynterceptFindNextFunctionBranch(
@@ -548,7 +548,7 @@ ZyanBool __zyntercept_cdecl ZynterceptFindFunctionBranchs(
         goto FAILURE;
     }
 
-    *FoundBranchs = (ZydisBranch*)calloc(Branchs.size(), sizeof(ZydisBranch));
+    *FoundBranchs = (ZydisBranch*)malloc(Branchs.size() * sizeof(ZydisBranch));
     *NumberOfFoundBranchs = Branchs.size();
 
     if (*FoundBranchs == nullptr)
@@ -556,8 +556,10 @@ ZyanBool __zyntercept_cdecl ZynterceptFindFunctionBranchs(
         goto FAILURE;
     }
 
+    memset(*FoundBranchs, 0, Branchs.size() * sizeof(ZydisBranch));
+
     /* Copy values from std::vector<ZydisBranch> to new allocated FoundBranchs buffer as C-array style */
-    memcpy_s(*FoundBranchs, Branchs.size() * sizeof(ZydisBranch), Branchs.data(), Branchs.size() * sizeof(ZydisBranch));
+    memcpy(*FoundBranchs, Branchs.data(), Branchs.size() * sizeof(ZydisBranch));
 
     free(Buffer);
     return ZYAN_TRUE;
@@ -610,13 +612,13 @@ ZyanBool __zyntercept_cdecl ZynterceptHasFunctionBranchDestinationsBetween(
         /* Check if destination is in prohibited region */
         if (Branch->Destination >= BeginAddress && Branch->Destination <= EndAddress)
         {
-            /* Release the allocated memory used by FindFunctionBranchs */
+            /* Release the allocated memory used by ZynterceptFindFunctionBranchs */
             free(FoundBranchs);
             return ZYAN_TRUE;
         }
     }
 
-    /* Release the allocated memory used by FindFunctionBranchs */
+    /* Release the allocated memory used by ZynterceptFindFunctionBranchs */
     free(FoundBranchs);
     return ZYAN_FALSE;
 }
