@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <Zyntercept/Core/Common/Common.h>
 
-SCENARIO("Testing the Difference function", "[difference]") 
+SCENARIO("Zyntercept difference calculus between pointers", "[common]") 
 {
     GIVEN("Two unsigned numbers where the first is greater than the second") 
     {
