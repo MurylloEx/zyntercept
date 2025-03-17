@@ -132,6 +132,12 @@ bool ZynterceptTransactionCommit() {
 			}
 		}
 
+		QueueOfRoutinesToAttach.clear();
+		QueueOfRoutinesToDetach.clear();
+
+		std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToAttach);
+		std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToDetach);
+
 		return false;
 	}
 	else {
@@ -231,6 +237,12 @@ bool ZynterceptTransactionCommit() {
 			QueueOfAttachedRoutines.push_back(Interception);
 		}
 
+		QueueOfRoutinesToAttach.clear();
+		QueueOfRoutinesToDetach.clear();
+
+		std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToAttach);
+		std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToDetach);
+
 		return false;
 	}
 	else {
@@ -245,8 +257,34 @@ bool ZynterceptTransactionCommit() {
 		}
 	}
 
+	QueueOfRoutinesToAttach.clear();
+	QueueOfRoutinesToDetach.clear();
+
+	std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToAttach);
+	std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToDetach);
+
 	TransactionIsOpen = false;
-	std::memset(&TransactionCurrentProcess, 0, sizeof(TransactionCurrentProcess));
+	TransactionCurrentProcess = { 0 };
+
+	return true;
+}
+
+bool ZynterceptTransactionAbandon() {
+	// Lock the transaction objects
+	std::lock_guard<std::mutex> Guard(TransactionMutex);
+
+	if (!TransactionIsOpen) {
+		return false;
+	}
+
+	QueueOfRoutinesToAttach.clear();
+	QueueOfRoutinesToDetach.clear();
+
+	std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToAttach);
+	std::vector<ZynterceptInterception>().swap(QueueOfRoutinesToDetach);
+
+	TransactionIsOpen = false;
+	TransactionCurrentProcess = { 0 };
 
 	return true;
 }

@@ -21,6 +21,7 @@ typedef struct ZynterceptProcess_ {
 
 bool ZynterceptTransactionBegin();
 bool ZynterceptTransactionCommit();
+bool ZynterceptTransactionAbandon();
 bool ZynterceptAttachProcess(ZynterceptProcess* Process);
 bool ZynterceptAttach(void** TargetRoutine, void* InterceptionRoutine);
 bool ZynterceptDetach(void** TargetRoutine);
