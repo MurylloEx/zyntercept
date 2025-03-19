@@ -10,13 +10,13 @@
 typedef void* ZynterceptHandle;
 
 typedef enum ZynterceptArchitecture_ {
-	ZYNTERCEPT_ARCHITECTURE_32BIT,
-	ZYNTERCEPT_ARCHITECTURE_64BIT,
+    ZYNTERCEPT_ARCHITECTURE_32BIT,
+    ZYNTERCEPT_ARCHITECTURE_64BIT,
 } ZynterceptArchitecture;
 
 typedef struct ZynterceptProcess_ {
-	ZynterceptHandle Identifier;
-	ZynterceptArchitecture Architecture;
+    ZynterceptHandle Identifier;
+    ZynterceptArchitecture Architecture;
 } ZynterceptProcess;
 
 bool ZynterceptTransactionBegin();
