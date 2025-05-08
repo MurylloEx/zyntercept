@@ -4,24 +4,24 @@
 cmake_minimum_required(VERSION 3.15)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-    message(FATAL_ERROR "In-tree builds are not supported. Run CMake from a separate directory: cmake -B build")
+	message(FATAL_ERROR "In-tree builds are not supported. Run CMake from a separate directory: cmake -B build")
 endif()
 
 set(CMKR_ROOT_PROJECT OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    set(CMKR_ROOT_PROJECT ON)
+	set(CMKR_ROOT_PROJECT ON)
 
-    # Bootstrap cmkr and automatically regenerate CMakeLists.txt
-    include(cmkr.cmake OPTIONAL RESULT_VARIABLE CMKR_INCLUDE_RESULT)
-    if(CMKR_INCLUDE_RESULT)
-        cmkr()
-    endif()
+	# Bootstrap cmkr and automatically regenerate CMakeLists.txt
+	include(cmkr.cmake OPTIONAL RESULT_VARIABLE CMKR_INCLUDE_RESULT)
+	if(CMKR_INCLUDE_RESULT)
+		cmkr()
+	endif()
 
-    # Enable folder support
-    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+	# Enable folder support
+	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-    # Create a configure-time dependency on cmake.toml to improve IDE support
-    configure_file(cmake.toml cmake.toml COPYONLY)
+	# Create a configure-time dependency on cmake.toml to improve IDE support
+	configure_file(cmake.toml cmake.toml COPYONLY)
 endif()
 
 # Options
@@ -29,64 +29,64 @@ option(ZYNTERCEPT_BUILD_TESTS "" OFF)
 option(ZYNTERCEPT_BUILD_EXAMPLES "" OFF)
 
 project(zyntercept
-    LANGUAGES
-        C
-        CXX
-    VERSION
-        1.0
-    DESCRIPTION
-        "Zyntercept is a Zydis-based library that has the ability to hook functions onto x86 and x86_64 microprocessor architectures. With Zyntercept you can create security software and instrument Win32/Linux APIs with __fastcall, __stdcall and __cdecl calling conventions."
+	LANGUAGES
+		C
+		CXX
+	VERSION
+		1.0
+	DESCRIPTION
+		"Zyntercept is a Zydis-based library that has the ability to hook functions onto x86 and x86_64 microprocessor architectures. With Zyntercept you can create security software and instrument Win32/Linux APIs with __fastcall, __stdcall and __cdecl calling conventions."
 )
 
 include(FetchContent)
 
 # Fix warnings about DOWNLOAD_EXTRACT_TIMESTAMP
 if(POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
+	cmake_policy(SET CMP0135 NEW)
 endif()
 message(STATUS "Fetching Zydis (v4.0.0)...")
 FetchContent_Declare(Zydis SYSTEM
-    GIT_REPOSITORY
-        "https://github.com/zyantific/zydis"
-    GIT_TAG
-        v4.0.0
+	GIT_REPOSITORY
+		"https://github.com/zyantific/zydis"
+	GIT_TAG
+		v4.0.0
 )
 FetchContent_MakeAvailable(Zydis)
 
 if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
-    message(STATUS "Fetching Catch2 (v3.6.0)...")
-    FetchContent_Declare(Catch2 SYSTEM
-        GIT_REPOSITORY
-            "https://github.com/catchorg/Catch2"
-        GIT_TAG
-            v3.6.0
-    )
-    FetchContent_MakeAvailable(Catch2)
+	message(STATUS "Fetching Catch2 (v3.6.0)...")
+	FetchContent_Declare(Catch2 SYSTEM
+		GIT_REPOSITORY
+			"https://github.com/catchorg/Catch2"
+		GIT_TAG
+			v3.6.0
+	)
+	FetchContent_MakeAvailable(Catch2)
 
 endif()
 # Target: Zyntercept
 set(Zyntercept_SOURCES
-    "Zyntercept/Core/Allocator/Allocator.cpp"
-    "Zyntercept/Core/Assembler/Assembler.cpp"
-    "Zyntercept/Core/Common/Common.cpp"
-    "Zyntercept/Core/Detour/Detour.cpp"
-    "Zyntercept/Core/Disassembler/Disassembler.cpp"
-    "Zyntercept/Core/Syscall/Unix/Unix.cpp"
-    "Zyntercept/Core/Syscall/Windows/Windows.cpp"
-    "Zyntercept/Core/Trampoline/Trampoline.cpp"
-    "Zyntercept/Zyntercept.cpp"
-    "Zyntercept/Core/Allocator/Allocator.h"
-    "Zyntercept/Core/Assembler/Assembler.h"
-    "Zyntercept/Core/Common/Common.h"
-    "Zyntercept/Core/Core.h"
-    "Zyntercept/Core/Detour/Detour.h"
-    "Zyntercept/Core/Disassembler/Disassembler.h"
-    "Zyntercept/Core/Syscall/Syscall.h"
-    "Zyntercept/Core/Syscall/Unix/Unix.h"
-    "Zyntercept/Core/Syscall/Windows/Windows.h"
-    "Zyntercept/Core/Trampoline/Trampoline.h"
-    "Zyntercept/Zyntercept.h"
-    cmake.toml
+	"Zyntercept/Core/Allocator/Allocator.cpp"
+	"Zyntercept/Core/Assembler/Assembler.cpp"
+	"Zyntercept/Core/Common/Common.cpp"
+	"Zyntercept/Core/Detour/Detour.cpp"
+	"Zyntercept/Core/Disassembler/Disassembler.cpp"
+	"Zyntercept/Core/Syscall/Unix/Unix.cpp"
+	"Zyntercept/Core/Syscall/Windows/Windows.cpp"
+	"Zyntercept/Core/Trampoline/Trampoline.cpp"
+	"Zyntercept/Zyntercept.cpp"
+	"Zyntercept/Core/Allocator/Allocator.h"
+	"Zyntercept/Core/Assembler/Assembler.h"
+	"Zyntercept/Core/Common/Common.h"
+	"Zyntercept/Core/Core.h"
+	"Zyntercept/Core/Detour/Detour.h"
+	"Zyntercept/Core/Disassembler/Disassembler.h"
+	"Zyntercept/Core/Syscall/Syscall.h"
+	"Zyntercept/Core/Syscall/Unix/Unix.h"
+	"Zyntercept/Core/Syscall/Windows/Windows.h"
+	"Zyntercept/Core/Trampoline/Trampoline.h"
+	"Zyntercept/Zyntercept.h"
+	cmake.toml
 )
 
 add_library(Zyntercept)
@@ -95,45 +95,45 @@ target_sources(Zyntercept PRIVATE ${Zyntercept_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${Zyntercept_SOURCES})
 
 target_include_directories(Zyntercept PUBLIC
-    .
+	.
 )
 
 target_link_libraries(Zyntercept PUBLIC
-    Zydis
+	Zydis
 )
 
 # Target: Zyntercept_Tests
 if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
-    set(Zyntercept_Tests_SOURCES
-        "Tests/Core/Allocator/AllocatorTests.cpp"
-        "Tests/Core/Assembler/AssemblerTests.cpp"
-        "Tests/Core/Common/CommonTests.cpp"
-        "Tests/Core/Detour/DetourTests.cpp"
-        "Tests/Core/Disassembler/DisassemblerTests.cpp"
-        "Tests/Core/Syscall/SyscallTests.cpp"
-        "Tests/Core/Trampoline/TrampolineTests.cpp"
-        "Tests/Core/ZynterceptTests.cpp"
-        "Tests/main.cpp"
-        cmake.toml
-    )
+	set(Zyntercept_Tests_SOURCES
+		"Tests/Core/Allocator/AllocatorTests.cpp"
+		"Tests/Core/Assembler/AssemblerTests.cpp"
+		"Tests/Core/Common/CommonTests.cpp"
+		"Tests/Core/Detour/DetourTests.cpp"
+		"Tests/Core/Disassembler/DisassemblerTests.cpp"
+		"Tests/Core/Syscall/SyscallTests.cpp"
+		"Tests/Core/Trampoline/TrampolineTests.cpp"
+		"Tests/Core/ZynterceptTests.cpp"
+		"Tests/main.cpp"
+		cmake.toml
+	)
 
-    add_executable(Zyntercept_Tests)
+	add_executable(Zyntercept_Tests)
 
-    target_sources(Zyntercept_Tests PRIVATE ${Zyntercept_Tests_SOURCES})
-    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${Zyntercept_Tests_SOURCES})
+	target_sources(Zyntercept_Tests PRIVATE ${Zyntercept_Tests_SOURCES})
+	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${Zyntercept_Tests_SOURCES})
 
-    target_include_directories(Zyntercept_Tests PRIVATE
-        .
-    )
+	target_include_directories(Zyntercept_Tests PRIVATE
+		.
+	)
 
-    target_link_libraries(Zyntercept_Tests PRIVATE
-        Zyntercept
-        Catch2
-    )
+	target_link_libraries(Zyntercept_Tests PRIVATE
+		Zyntercept
+		Catch2
+	)
 
-    get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} DEFINITION VS_STARTUP_PROJECT)
-    if(NOT CMKR_VS_STARTUP_PROJECT)
-        set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Zyntercept_Tests)
-    endif()
+	get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} DEFINITION VS_STARTUP_PROJECT)
+	if(NOT CMKR_VS_STARTUP_PROJECT)
+		set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Zyntercept_Tests)
+	endif()
 
 endif()
