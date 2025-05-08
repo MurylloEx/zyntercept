@@ -79,7 +79,7 @@ bool ZynterceptTransactionCommit() {
 
         if (Interception.Process.Architecture == ZYNTERCEPT_ARCHITECTURE_32BIT) {
             Status = ZynterceptDetourFunction32(
-                TransactionCurrentProcess.Identifier,
+                ProcessIdentifier,
                 OriginalFunction,
                 DetourFunction,
                 &TrampolineFunction,
@@ -215,7 +215,7 @@ bool ZynterceptTransactionCommit() {
 
             if (Interception.Process.Architecture == ZYNTERCEPT_ARCHITECTURE_32BIT) {
                 ZYNTERCEPT_UNREFERENCED(ZynterceptDetourFunction32(
-                    TransactionCurrentProcess.Identifier,
+                    ProcessIdentifier,
                     OriginalFunction,
                     DetourFunction,
                     &TrampolineFunction,
