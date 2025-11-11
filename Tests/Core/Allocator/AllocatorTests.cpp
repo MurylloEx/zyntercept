@@ -165,7 +165,7 @@ SCENARIO("Zyntercept memory allocation near a lower target address", "[allocator
         ZyanU32 AllocationType = ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED;
         ZyanU32 AllocationProtection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
         ZyanU64 AllocationGranularity = 0x10000ULL;
-        ZYNTERCEPT_PAGED_MEMORY Page = { 0 };
+        ZynterceptPagedMemory Page = { 0 };
 
         AND_GIVEN("I want to allocate memory near a target address, but lower than it")
         {
@@ -233,7 +233,7 @@ SCENARIO("Zyntercept memory allocation at the nearest address to the target addr
         ZyanU64 AllocationSize = 0x1000ULL;
         ZyanU32 AllocationType = ZYNTERCEPT_PAGE_STATE_RESERVED | ZYNTERCEPT_PAGE_STATE_COMMITTED;
         ZyanU32 AllocationProtection = ZYNTERCEPT_PAGE_PROTECTION_READ | ZYNTERCEPT_PAGE_PROTECTION_WRITE;
-        ZYNTERCEPT_PAGED_MEMORY Page = { 0 };
+        ZynterceptPagedMemory Page = { 0 };
 
         AND_GIVEN("I want to allocate memory at the nearest address to the target address")
         {
