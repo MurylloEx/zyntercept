@@ -25,8 +25,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 # Options
-option(ZYNTERCEPT_BUILD_TESTS "" OFF)
-option(ZYNTERCEPT_BUILD_EXAMPLES "" OFF)
+option(ZYNTERCEPT_BUILD_TESTS "" ON)
 
 project(zyntercept
 	LANGUAGES
@@ -53,7 +52,7 @@ FetchContent_Declare(Zydis SYSTEM
 )
 FetchContent_MakeAvailable(Zydis)
 
-if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
+if(ZYNTERCEPT_BUILD_TESTS AND CMKR_ROOT_PROJECT) # tests
 	message(STATUS "Fetching Catch2 (v3.6.0)...")
 	FetchContent_Declare(Catch2 SYSTEM
 		GIT_REPOSITORY
@@ -66,15 +65,13 @@ if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
 endif()
 # Target: Zyntercept
 set(Zyntercept_SOURCES
+	"Zyntercept/Zyntercept.cpp"
 	"Zyntercept/Core/Allocator/Allocator.cpp"
 	"Zyntercept/Core/Assembler/Assembler.cpp"
 	"Zyntercept/Core/Common/Common.cpp"
 	"Zyntercept/Core/Detour/Detour.cpp"
 	"Zyntercept/Core/Disassembler/Disassembler.cpp"
-	"Zyntercept/Core/Syscall/Unix/Unix.cpp"
-	"Zyntercept/Core/Syscall/Windows/Windows.cpp"
 	"Zyntercept/Core/Trampoline/Trampoline.cpp"
-	"Zyntercept/Zyntercept.cpp"
 	"Zyntercept/Core/Allocator/Allocator.h"
 	"Zyntercept/Core/Assembler/Assembler.h"
 	"Zyntercept/Core/Common/Common.h"
@@ -89,10 +86,26 @@ set(Zyntercept_SOURCES
 	cmake.toml
 )
 
+if(WIN32) # windows
+	list(APPEND Zyntercept_SOURCES
+		"Zyntercept/Core/Syscall/Windows/Windows.cpp"
+	)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES "Linux") # linux
+	list(APPEND Zyntercept_SOURCES
+		"Zyntercept/Core/Syscall/Unix/Unix.cpp"
+	)
+endif()
+
 add_library(Zyntercept)
 
 target_sources(Zyntercept PRIVATE ${Zyntercept_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${Zyntercept_SOURCES})
+
+target_compile_options(Zyntercept PUBLIC
+	-fpermissive
+)
 
 target_include_directories(Zyntercept PUBLIC
 	.
@@ -103,7 +116,7 @@ target_link_libraries(Zyntercept PUBLIC
 )
 
 # Target: Zyntercept_Tests
-if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
+if(ZYNTERCEPT_BUILD_TESTS AND CMKR_ROOT_PROJECT) # tests
 	set(Zyntercept_Tests_SOURCES
 		"Tests/Core/Allocator/AllocatorTests.cpp"
 		"Tests/Core/Assembler/AssemblerTests.cpp"
@@ -121,6 +134,10 @@ if(ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT) # tests
 
 	target_sources(Zyntercept_Tests PRIVATE ${Zyntercept_Tests_SOURCES})
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${Zyntercept_Tests_SOURCES})
+
+	target_compile_options(Zyntercept_Tests PRIVATE
+		-fpermissive
+	)
 
 	target_include_directories(Zyntercept_Tests PRIVATE
 		.
