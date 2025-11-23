@@ -2,8 +2,10 @@
 #define ZYNTERCEPT_COMMON_H
 
 #include <Zydis/Zydis.h>
+#include <cstring>
+#include <algorithm>
 
-#define __zyntercept_cdecl __cdecl
+#define __zyntercept_cdecl
 #define __zyntercept_in
 #define __zyntercept_out
 
