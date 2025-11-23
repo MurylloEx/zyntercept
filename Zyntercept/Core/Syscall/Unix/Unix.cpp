@@ -1,36 +1,31 @@
 #include <Zyntercept/Core/Syscall/Unix/Unix.h>
 
-#include <unistd.h>
-#include <sys/utsname.h>
-#include <sys/uio.h>
-#include <sys/mman.h>
-#include <cstring>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
-#include <cstdio>
-#include <elf.h>
 #include <limits>
+#include <cstdio>
 #include <cstdint>
 #include <cstdlib>
-
-#define CURRENT_PROCESS_IDENTIFIER_UNIX (ZyanVoidPointer)-1
+#include <cstring>
+#include <unistd.h>
+#include <elf.h>
+#include <sys/uio.h>
+#include <sys/mman.h>
+#include <sys/utsname.h>
 
 static ZyanBool ZynterceptReadProcessElfClassUnix(
-    __zyntercept_in pid_t ProcessId,
+    __zyntercept_in ZyanVoidPointer ProcessIdentifier,
     __zyntercept_out ZyanU8* ElfClass)
 {
-    char ExePath[64] = { 0 };
-    std::snprintf(ExePath, sizeof(ExePath), "/proc/%d/exe", ProcessId);
-
-    std::ifstream ExeFile(ExePath, std::ios::binary);
+    std::ifstream ExeFile("/proc/" + std::to_string((uint64_t)ProcessIdentifier) + "/exe", std::ios::binary);
     if (!ExeFile.is_open()) {
         return ZYAN_FALSE;
     }
 
-    unsigned char Ident[EI_NIDENT] = { 0 };
+    uint8_t Ident[EI_NIDENT] = { 0 };
     ExeFile.read(reinterpret_cast<char*>(Ident), sizeof(Ident));
 
     std::streamsize BytesRead = ExeFile.gcount();
@@ -40,7 +35,11 @@ static ZyanBool ZynterceptReadProcessElfClassUnix(
         return ZYAN_FALSE;
     }
 
-    if (Ident[0] != 0x7F || Ident[1] != 'E' || Ident[2] != 'L' || Ident[3] != 'F') {
+    if (Ident[0] != 0x7F || 
+        Ident[1] != 'E' || 
+        Ident[2] != 'L' || 
+        Ident[3] != 'F') 
+    {
         return ZYAN_FALSE;
     }
 
@@ -80,13 +79,16 @@ static ZyanBool ZynterceptMapPageProtectionToUnix(
     __zyntercept_in ZyanU32 ZynterceptPageProtection,
     __zyntercept_out int* UnixProtection)
 {
-    int Protection = 0;
+    int Protection = PROT_NONE;
 
-    if ((ZynterceptPageProtection & ~(
-            ZYNTERCEPT_PAGE_PROTECTION_NONE |
-            ZYNTERCEPT_PAGE_PROTECTION_READ |
-            ZYNTERCEPT_PAGE_PROTECTION_WRITE |
-            ZYNTERCEPT_PAGE_PROTECTION_EXECUTE)) != 0) {
+    ZyanU32 PageProtectionsMask = 
+        ZYNTERCEPT_PAGE_PROTECTION_NONE |
+        ZYNTERCEPT_PAGE_PROTECTION_READ |
+        ZYNTERCEPT_PAGE_PROTECTION_WRITE |
+        ZYNTERCEPT_PAGE_PROTECTION_EXECUTE;
+
+    if ((ZynterceptPageProtection & ~PageProtectionsMask) != 0)
+    {
         return ZYAN_FALSE;
     }
 
@@ -96,22 +98,19 @@ static ZyanBool ZynterceptMapPageProtectionToUnix(
         if (ZynterceptPageProtection & ZYNTERCEPT_PAGE_PROTECTION_READ) {
             Protection |= PROT_READ;
         }
+        
         if (ZynterceptPageProtection & ZYNTERCEPT_PAGE_PROTECTION_WRITE) {
             Protection |= PROT_WRITE;
         }
+    
         if (ZynterceptPageProtection & ZYNTERCEPT_PAGE_PROTECTION_EXECUTE) {
             Protection |= PROT_EXEC;
-        }
-
-        if (Protection == 0) {
-            Protection = PROT_NONE;
         }
     }
 
     *UnixProtection = Protection;
     return ZYAN_TRUE;
 }
-
 
 ZyanBool __zyntercept_cdecl ZynterceptIs64BitSystemUnix()
 {
@@ -158,10 +157,9 @@ ZyanBool __zyntercept_cdecl ZynterceptIs32BitProcessUnix(
         return (sizeof(void*) == 4) ? ZYAN_TRUE : ZYAN_FALSE;
     }
 
-    pid_t TargetPid = (pid_t)(ZyanU64)ProcessIdentifier;
     ZyanU8 ElfClass = ELFCLASSNONE;
 
-    if (!ZynterceptReadProcessElfClassUnix(TargetPid, &ElfClass)) {
+    if (!ZynterceptReadProcessElfClassUnix(ProcessIdentifier, &ElfClass)) {
         return ZYAN_FALSE;
     }
 
@@ -175,10 +173,9 @@ ZyanBool __zyntercept_cdecl ZynterceptIs64BitProcessUnix(
         return (sizeof(void*) == 8) ? ZYAN_TRUE : ZYAN_FALSE;
     }
 
-    pid_t TargetPid = (pid_t)(ZyanU64)ProcessIdentifier;
     ZyanU8 ElfClass = ELFCLASSNONE;
 
-    if (!ZynterceptReadProcessElfClassUnix(TargetPid, &ElfClass)) {
+    if (!ZynterceptReadProcessElfClassUnix(ProcessIdentifier, &ElfClass)) {
         return ZYAN_FALSE;
     }
 
@@ -192,7 +189,7 @@ ZyanBool __zyntercept_cdecl ZynterceptIsUnsupportedProcessArchitectureUnix(
         return ZYAN_FALSE;
     }
 
-    if (ZynterceptIs32BitProcessUnix(CURRENT_PROCESS_IDENTIFIER_UNIX) &&
+    if (ZynterceptIs32BitProcessUnix((ZyanVoidPointer)(ZyanU64)getpid()) &&
         ZynterceptIs64BitProcessUnix(ProcessIdentifier))
     {
         return ZYAN_TRUE;
@@ -204,12 +201,7 @@ ZyanBool __zyntercept_cdecl ZynterceptIsUnsupportedProcessArchitectureUnix(
 ZyanBool __zyntercept_cdecl ZynterceptIsCurrentProcessUnix(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier)
 {
-    if (ProcessIdentifier == CURRENT_PROCESS_IDENTIFIER_UNIX) {
-        return ZYAN_TRUE;
-    }
-
-    pid_t CurrentPid = getpid();
-    if ((pid_t)(ZyanU64)ProcessIdentifier == CurrentPid) {
+    if (ProcessIdentifier == (ZyanVoidPointer)(ZyanU64)getpid()) {
         return ZYAN_TRUE;
     }
 
@@ -255,69 +247,68 @@ ZyanBool __zyntercept_cdecl ZynterceptVirtualMemoryInformationUnix(
 
 ZyanU64 __zyntercept_cdecl ZynterceptAllocateMemoryUnix(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
-    __zyntercept_in ZynterceptPagedMemory* MemoryBlock)
+    __zyntercept_in ZynterceptPagedMemory* Page)
 {
+    if (ZynterceptIsUnsupportedProcessArchitectureUnix(ProcessIdentifier)) {
+        return 0;
+    }
+
     if (!ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
         return 0;
     }
 
-    if (!MemoryBlock || MemoryBlock->Size == 0) {
-        return 0;
-    }
-
-    ZynterceptPagedMemoryInformation VmInfo = { 0 };
-    if (!ZynterceptVirtualMemoryInformationUnix(&VmInfo)) {
+    if (!Page || Page->Size == 0) {
         return 0;
     }
 
     int UnixProtection = PROT_NONE;
-    if (!ZynterceptMapPageProtectionToUnix(MemoryBlock->Protection, &UnixProtection)) {
+    if (!ZynterceptMapPageProtectionToUnix(Page->Protection, &UnixProtection)) {
         return 0;
     }
 
-    ZyanU64 AllocationGranularity = (ZyanU64)VmInfo.AllocationGranularity;
-    ZyanU64 GranularityMask = AllocationGranularity - 1;
-    ZyanU64 AdjustedSize = (MemoryBlock->Size + GranularityMask) & ~GranularityMask;
+    int Flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
-    if (AdjustedSize == 0 ||
-        AdjustedSize > (ZyanU64)std::numeric_limits<size_t>::max()) {
-        return 0;
-    }
-
-    void* RequestedAddress = nullptr;
-    if (MemoryBlock->Address != 0) {
-        RequestedAddress = reinterpret_cast<void*>(
-            (uintptr_t)(MemoryBlock->Address & ~GranularityMask));
+    if (ZynterceptIs32BitProcessUnix(ProcessIdentifier)) {
+        Flags |= MAP_32BIT;
     }
 
     void* Allocation = mmap(
-        RequestedAddress,
-        (size_t)AdjustedSize,
+        (void*)Page->Address,
+        Page->Size,
         UnixProtection,
-        MAP_PRIVATE | MAP_ANONYMOUS,
-        -1,
-        0);
+        Flags,
+        -1, 0);
 
     if (Allocation == MAP_FAILED) {
         return 0;
     }
 
-    ZynterceptPagedMemory QueriedBlock = { 0 };
-    QueriedBlock.Address = (ZyanU64)(uintptr_t)Allocation;
-
-    if (ZynterceptQueryMemoryUnix(CURRENT_PROCESS_IDENTIFIER_UNIX, &QueriedBlock)) {
-        *MemoryBlock = QueriedBlock;
-    } else {
-        MemoryBlock->Address = (ZyanU64)(uintptr_t)Allocation;
-        MemoryBlock->Size = AdjustedSize;
-        MemoryBlock->State = ZYNTERCEPT_PAGE_STATE_COMMITED;
-        MemoryBlock->Protection = ZYNTERCEPT_PAGE_PROTECTION_NONE;
-    }
-
-    return (ZyanU64)(uintptr_t)Allocation;
+    return (ZyanU64)(ZyanUPointer)Allocation;
 }
 
 ZyanBool __zyntercept_cdecl ZynterceptReleaseMemoryUnix(
+    __zyntercept_in ZyanVoidPointer ProcessIdentifier,
+    __zyntercept_in ZynterceptPagedMemory* Page)
+{
+    if (ZynterceptIsUnsupportedProcessArchitectureUnix(ProcessIdentifier)) {
+        return ZYAN_FALSE;
+    }
+
+    if (!ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
+        return ZYAN_FALSE;
+    }
+
+    if (munmap((void*)Page->Address, Page->Size) != 0) {
+        return ZYAN_FALSE;
+    }
+
+    Page->Address = 0;
+    Page->Size = 0;
+
+    return ZYAN_TRUE;
+}
+
+ZyanBool __zyntercept_cdecl ZynterceptProtectMemoryUnix(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
     __zyntercept_in ZynterceptPagedMemory* Page)
 {
@@ -325,88 +316,44 @@ ZyanBool __zyntercept_cdecl ZynterceptReleaseMemoryUnix(
         return ZYAN_FALSE;
     }
 
-    if (!Page || Page->Address == 0 || Page->Size == 0) {
+    if (!Page || !Page->Address || !Page->Size) {
         return ZYAN_FALSE;
     }
 
-    void* UnmapAddress = reinterpret_cast<void*>((uintptr_t)Page->Address);
-    size_t UnmapSize = (size_t)Page->Size;
+    ZynterceptPagedMemory PreviousInformation = {0};
 
-    if (munmap(UnmapAddress, UnmapSize) != 0) {
+    PreviousInformation.Address = Page->Address;
+    PreviousInformation.Size = Page->Size;
+
+    if (!ZynterceptQueryMemoryUnix(ProcessIdentifier, &PreviousInformation)) {
         return ZYAN_FALSE;
     }
 
-    Page->Address = 0;
-    Page->Size = 0;
-    Page->State = ZYNTERCEPT_PAGE_STATE_FREE;
-    Page->Protection = ZYNTERCEPT_PAGE_PROTECTION_NONE;
-
-    return ZYAN_TRUE;
-}
-
-ZyanBool __zyntercept_cdecl ZynterceptProtectMemoryUnix(
-    __zyntercept_in ZyanVoidPointer ProcessIdentifier,
-    __zyntercept_in ZynterceptPagedMemory* MemoryBlock)
-{
-    if (!ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
-        return ZYAN_FALSE;
-    }
-
-    if (!MemoryBlock || MemoryBlock->Address == 0) {
-        return ZYAN_FALSE;
-    }
-
-    ZynterceptPagedMemory CurrentInfo = { 0 };
-    CurrentInfo.Address = MemoryBlock->Address;
-
-    if (!ZynterceptQueryMemoryUnix(ProcessIdentifier, &CurrentInfo)) {
-        return ZYAN_FALSE;
-    }
-
-    ZyanU64 RequestedProtection = MemoryBlock->Protection;
     int UnixProtection = PROT_NONE;
 
-    if (!ZynterceptMapPageProtectionToUnix(RequestedProtection, &UnixProtection)) {
+    if (!ZynterceptMapPageProtectionToUnix(Page->Protection, &UnixProtection)) {
         return ZYAN_FALSE;
     }
 
-    long PageSize = sysconf(_SC_PAGESIZE);
-    if (PageSize <= 0) {
-        PageSize = getpagesize();
-    }
+    ZynterceptPagedMemoryInformation Information = { 0 };
 
-    if (PageSize <= 0) {
+    if (!ZynterceptVirtualMemoryInformationUnix(&Information)) {
         return ZYAN_FALSE;
     }
 
-    ZyanU64 RegionSize = MemoryBlock->Size ? MemoryBlock->Size : CurrentInfo.Size;
-    if (RegionSize == 0) {
+    ZyanUPointer PageSize = Information.AllocationPageSize;
+    ZyanUPointer AlignedAddress = Page->Address & ~(PageSize - 1);
+    ZyanUSize Offset = Page->Address - AlignedAddress;
+    ZyanUSize AlignedSize = ((Page->Size + Offset + PageSize - 1) / PageSize) * PageSize;
+
+    if (mprotect((void*)AlignedAddress, AlignedSize, UnixProtection) != 0) {
         return ZYAN_FALSE;
     }
 
-    ZyanU64 PageSizeU = (ZyanU64)PageSize;
-    ZyanU64 PageMask = PageSizeU - 1;
-    ZyanU64 AlignedAddress = MemoryBlock->Address & ~PageMask;
-    ZyanU64 Offset = MemoryBlock->Address - AlignedAddress;
-    ZyanU64 AdjustedSize = RegionSize + Offset;
-    AdjustedSize = (AdjustedSize + PageMask) & ~PageMask;
+    Page->Protection = PreviousInformation.Protection;
 
-    if (AlignedAddress > (ZyanU64)std::numeric_limits<uintptr_t>::max() ||
-        AdjustedSize > (ZyanU64)std::numeric_limits<size_t>::max()) {
-        return ZYAN_FALSE;
-    }
-
-    void* ProtectAddress = reinterpret_cast<void*>((uintptr_t)AlignedAddress);
-    size_t ProtectSize = (size_t)AdjustedSize;
-
-    if (mprotect(ProtectAddress, ProtectSize, UnixProtection) != 0) {
-        return ZYAN_FALSE;
-    }
-
-    MemoryBlock->Protection = CurrentInfo.Protection;
-
-    if (MemoryBlock->Protection & ZYNTERCEPT_PAGE_PROTECTION_EXECUTE) {
-        ZYNTERCEPT_UNREFERENCED(ZynterceptFlushMicroprocessorCacheUnix(ProcessIdentifier, MemoryBlock));
+    if (Page->Protection & ZYNTERCEPT_PAGE_PROTECTION_EXECUTE) {
+        ZYNTERCEPT_UNREFERENCED(ZynterceptFlushMicroprocessorCacheUnix(ProcessIdentifier, Page));
     }
 
     return ZYAN_TRUE;
@@ -414,138 +361,140 @@ ZyanBool __zyntercept_cdecl ZynterceptProtectMemoryUnix(
 
 ZyanBool __zyntercept_cdecl ZynterceptQueryMemoryUnix(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
-    __zyntercept_in ZynterceptPagedMemory* MemoryBlock)
+    __zyntercept_in ZynterceptPagedMemory* Page)
 {
-    pid_t TargetPid;
-    
-    if (ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
-        TargetPid = getpid();
-    } else {
-        TargetPid = (pid_t)(ZyanU64)ProcessIdentifier;
-    }
-
-    char MapsPath[256];
-    std::snprintf(MapsPath, sizeof(MapsPath), "/proc/%d/maps", TargetPid);
-
-    std::ifstream MapsFile(MapsPath);
-    if (!MapsFile.is_open()) {
+    if (ZynterceptIsUnsupportedProcessArchitectureUnix(ProcessIdentifier)) {
         return ZYAN_FALSE;
     }
 
-    ZyanU64 TargetAddress = MemoryBlock->Address;
-    std::string Line;
+    if (!Page || !Page->Address) {
+        return ZYAN_FALSE;
+    }
 
-    while (std::getline(MapsFile, Line)) {
-        unsigned long long StartAddr, EndAddr;
+    pid_t TargetPid = (pid_t)(ZyanU64)ProcessIdentifier;
+
+    std::ifstream AllocationTable("/proc/" + std::to_string(TargetPid) + "/maps");
+
+    if (!AllocationTable.is_open()) {
+        return ZYAN_FALSE;
+    }
+
+    std::string Line;
+    bool HasFoundAllocation = false;
+
+    while (std::getline(AllocationTable, Line)) {
+        unsigned long long BeginAddress = 0;
+        unsigned long long EndAddress = 0;
         char Permissions[5] = {0};
-        unsigned long long Offset;
-        unsigned int Major, Minor;
-        unsigned long long Inode;
+        unsigned long long Offset = 0;
+        unsigned int Major = 0;
+        unsigned int Minor = 0;
+        unsigned long long Inode = 0;
         char Pathname[256] = {0};
 
-        int Parsed = std::sscanf(Line.c_str(), "%llx-%llx %4s %llx %x:%x %llu %255[^\n]",
-            &StartAddr, &EndAddr, Permissions, &Offset, &Major, &Minor, &Inode, Pathname);
+        int Parsed = std::sscanf(
+            Line.c_str(), 
+            "%llx-%llx %4s %llx %x:%x %llu %255[^\n]",
+            &BeginAddress, 
+            &EndAddress, 
+            Permissions, 
+            &Offset, 
+            &Major, 
+            &Minor, 
+            &Inode, 
+            Pathname);
 
-        if (Parsed < 3) {
-            continue;
-        }
+        if (Parsed < 3) continue;
 
-        if (TargetAddress >= (ZyanU64)StartAddr && TargetAddress < (ZyanU64)EndAddr) {
-            MemoryBlock->Address = (ZyanU64)StartAddr;
-            MemoryBlock->Size = (ZyanU64)EndAddr - (ZyanU64)StartAddr;
-
-            if (!ZynterceptMapPageProtectionFromUnix(Permissions, &MemoryBlock->Protection)) {
-                MapsFile.close();
-                return ZYAN_FALSE;
+        if (Page->Address >= (ZyanU64)BeginAddress && Page->Address < (ZyanU64)EndAddress)
+        {
+            if (!ZynterceptMapPageProtectionFromUnix(Permissions, &Page->Protection)) {
+                goto UNSUCCESSFUL_STATUS;
             }
 
-            MemoryBlock->State = ZYNTERCEPT_PAGE_STATE_COMMITED;
+            Page->Address = (ZyanU64)BeginAddress;
+            Page->Size = (ZyanU64)EndAddress - (ZyanU64)BeginAddress;
+            Page->State = ZYNTERCEPT_PAGE_STATE_COMMITTED;
 
-            MapsFile.close();
-            return ZYAN_TRUE;
+            HasFoundAllocation = true;
+            break;
         }
     }
 
-    MapsFile.close();
+    if (!HasFoundAllocation) {
+        ZynterceptPagedMemoryInformation Information = { 0 };
+
+        if (!ZynterceptVirtualMemoryInformationUnix(&Information)) {
+            goto UNSUCCESSFUL_STATUS;
+        }
+
+        ZyanU64 PageMask = Information.AllocationPageSize - 1;
+        ZyanU64 AlignedAddress = Page->Address & ~PageMask;
+
+        Page->Address = AlignedAddress;
+        Page->Size = Information.AllocationPageSize;
+        Page->Protection = ZYNTERCEPT_PAGE_PROTECTION_NONE;
+        Page->State = ZYNTERCEPT_PAGE_STATE_FREE;
+    }
+
+    AllocationTable.close();
+    return ZYAN_TRUE;
+
+UNSUCCESSFUL_STATUS:
+    AllocationTable.close();
     return ZYAN_FALSE;
 }
 
 ZyanBool __zyntercept_cdecl ZynterceptWriteMemoryUnix(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
-    __zyntercept_in ZynterceptPagedMemoryOperation* Request)
+    __zyntercept_in ZynterceptPagedMemoryOperation* Operation)
 {
-    if (ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
-        std::memcpy((void*)Request->Address, Request->Buffer, Request->Size);
-        return ZYAN_TRUE;
-    }
-
-    pid_t TargetPid = (pid_t)(ZyanU64)ProcessIdentifier;
-    
-    struct iovec LocalIov;
-    LocalIov.iov_base = Request->Buffer;
-    LocalIov.iov_len = Request->Size;
-
-    struct iovec RemoteIov;
-    RemoteIov.iov_base = (void*)Request->Address;
-    RemoteIov.iov_len = Request->Size;
-
-    ssize_t BytesWritten = process_vm_writev(TargetPid, &LocalIov, 1, &RemoteIov, 1, 0);
-    
-    if (BytesWritten == -1) {
+    if (ZynterceptIsUnsupportedProcessArchitectureUnix(ProcessIdentifier)) {
         return ZYAN_FALSE;
     }
 
-    if ((ZyanU64)BytesWritten != Request->Size) {
+    if (!ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
         return ZYAN_FALSE;
     }
+
+    memcpy((void*)Operation->Address, Operation->Buffer, Operation->Size);
 
     return ZYAN_TRUE;
 }
 
 ZyanBool __zyntercept_cdecl ZynterceptReadMemoryUnix(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
-    __zyntercept_in ZynterceptPagedMemoryOperation* Request)
+    __zyntercept_in ZynterceptPagedMemoryOperation* Operation)
 {
-    if (ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
-        std::memcpy(Request->Buffer, (void*)Request->Address, Request->Size);
-        return ZYAN_TRUE;
-    }
-
-    pid_t TargetPid = (pid_t)(ZyanU64)ProcessIdentifier;
-    
-    struct iovec LocalIov;
-    LocalIov.iov_base = Request->Buffer;
-    LocalIov.iov_len = Request->Size;
-
-    struct iovec RemoteIov;
-    RemoteIov.iov_base = (void*)Request->Address;
-    RemoteIov.iov_len = Request->Size;
-
-    ssize_t BytesRead = process_vm_readv(TargetPid, &LocalIov, 1, &RemoteIov, 1, 0);
-    
-    if (BytesRead == -1) {
+    if (ZynterceptIsUnsupportedProcessArchitectureUnix(ProcessIdentifier)) {
         return ZYAN_FALSE;
     }
 
-    if ((ZyanU64)BytesRead != Request->Size) {
+    if (!ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
         return ZYAN_FALSE;
     }
+
+    memcpy(Operation->Buffer, (void*)Operation->Address, Operation->Size);
 
     return ZYAN_TRUE;
 }
 
 ZyanBool __zyntercept_cdecl ZynterceptFlushMicroprocessorCacheUnix(
     __zyntercept_in ZyanVoidPointer ProcessIdentifier,
-    __zyntercept_in ZynterceptPagedMemory* MemoryBlock)
+    __zyntercept_in ZynterceptPagedMemory* Page)
 {
+    if (ZynterceptIsUnsupportedProcessArchitectureUnix(ProcessIdentifier)) {
+        return ZYAN_FALSE;
+    }
+
     if (!ZynterceptIsCurrentProcessUnix(ProcessIdentifier)) {
         return ZYAN_FALSE;
     }
 
-    void* Begin = (void*)MemoryBlock->Address;
-    void* End = (void*)((char*)Begin + MemoryBlock->Size);
+    void* BeginAddress = (void*)Page->Address;
+    void* EndAddress = (void*)((char*)BeginAddress + Page->Size);
     
-    __builtin___clear_cache(Begin, End);
+    __builtin___clear_cache(BeginAddress, EndAddress);
     
     return ZYAN_TRUE;
 }
