@@ -8,7 +8,7 @@ static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 
 #if defined(ZYNTERCEPT_UNIX)
 #include <unistd.h>
-static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)(ZyanUPointer)getpid();
 #endif
 
 SCENARIO("Zyntercept system architecture detection", "[syscall]")
@@ -263,11 +263,11 @@ SCENARIO("Zyntercept atomic memory write operations", "[syscall]")
         memset(FirstSourceBuffer, 1, sizeof(FirstSourceBuffer));
         memset(SecondSourceBuffer, 2, sizeof(SecondSourceBuffer));
 
-        Operations[0].Address = reinterpret_cast<ZyanU64>(FirstTargetBuffer);
+        Operations[0].Address = reinterpret_cast<ZyanUPointer>(FirstTargetBuffer);
         Operations[0].Size = sizeof(FirstTargetBuffer);
         Operations[0].Buffer = FirstSourceBuffer;
 
-        Operations[1].Address = reinterpret_cast<ZyanU64>(SecondTargetBuffer);
+        Operations[1].Address = reinterpret_cast<ZyanUPointer>(SecondTargetBuffer);
         Operations[1].Size = sizeof(SecondTargetBuffer);
         Operations[1].Buffer = SecondSourceBuffer;
 

@@ -10,7 +10,7 @@ static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 
 #if defined(ZYNTERCEPT_UNIX)
 #include <unistd.h>
-static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)(ZyanUPointer)getpid();
 #endif
 
 static void NoopFunction() {
