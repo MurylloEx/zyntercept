@@ -407,7 +407,7 @@ ZyanU64 __zyntercept_cdecl ZynterceptAllocateMemoryWindows(
         return 0;
     }
 
-    return (ZyanU64)BaseAddress;
+    return (ZyanU64)(ZyanUPointer)BaseAddress;
 }
 
 ZyanBool __zyntercept_cdecl ZynterceptReleaseMemoryWindows(

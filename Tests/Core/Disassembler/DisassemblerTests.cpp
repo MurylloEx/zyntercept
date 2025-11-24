@@ -9,7 +9,7 @@ static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 
 #if defined(ZYNTERCEPT_UNIX)
 #include <unistd.h>
-static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)(ZyanUPointer)getpid();
 #endif
 
 TEST_CASE("Check if ZynterceptIsRelative recognize <jmp dword ptr 0x1004C> as relative instruction", "[disassembler]") {

@@ -9,7 +9,7 @@ static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 
 #if defined(ZYNTERCEPT_UNIX)
 #include <unistd.h>
-static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)getpid();
+static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)(uint64_t)getpid();
 #endif
 
 SCENARIO("Zyntercept memory allocation near a target address", "[allocator]")

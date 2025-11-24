@@ -2,9 +2,9 @@
 #define ZYNTERCEPT_H
 
 #if defined(__cplusplus)
-#define ROUTINE(Routine) &(void*&)Original##Routine
-#define INTERCEPTION(Routine) &Intercept##Routine
-#define TRAMPOLINE(Routine) static decltype(Routine)* Original##Routine = Routine
+#define ROUTINE(Routine) reinterpret_cast<void**>(&Original##Routine)
+#define INTERCEPTION(Routine) reinterpret_cast<void*>(Intercept##Routine)
+#define TRAMPOLINE(Routine) static decltype(&Routine) Original##Routine = &Routine
 #endif
 
 typedef void* ZynterceptHandle;

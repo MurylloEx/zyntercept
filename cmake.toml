@@ -5,12 +5,10 @@ version = "1.0"
 languages = ["C", "CXX"]
 
 [options]
-ZYNTERCEPT_BUILD_TESTS = false
-ZYNTERCEPT_BUILD_EXAMPLES = false
+ZYNTERCEPT_BUILD_TESTS = true
 
 [conditions]
-tests = "ZYNTERCEPT_BUILD_TESTS OR CMKR_ROOT_PROJECT"
-examples = "ZYNTERCEPT_BUILD_EXAMPLES OR CMKR_ROOT_PROJECT"
+tests = "ZYNTERCEPT_BUILD_TESTS AND CMKR_ROOT_PROJECT"
 
 [fetch-content.Zydis]
 git = "https://github.com/zyantific/zydis"
@@ -24,9 +22,24 @@ tag = "v3.6.0"
 [target.Zyntercept]
 type = "library"
 headers = ["Zyntercept/**.h"]
-sources = ["Zyntercept/**.cpp"]
+sources = [
+    "Zyntercept/Zyntercept.cpp",
+    "Zyntercept/Core/Allocator/**.cpp",
+    "Zyntercept/Core/Assembler/**.cpp",
+    "Zyntercept/Core/Common/**.cpp",
+    "Zyntercept/Core/Detour/**.cpp",
+    "Zyntercept/Core/Disassembler/**.cpp",
+    "Zyntercept/Core/Trampoline/**.cpp"
+]
 link-libraries = ["Zydis"]
 include-directories = ["."]
+gcc.compile-options = ["-fpermissive"]
+
+[target.Zyntercept.windows]
+sources = ["Zyntercept/Core/Syscall/Windows/**.cpp"]
+
+[target.Zyntercept.linux]
+sources = ["Zyntercept/Core/Syscall/Unix/**.cpp"]
 
 [target.Zyntercept_Tests]
 condition = "tests"
@@ -35,3 +48,4 @@ headers = ["Tests/**.h"]
 sources = ["Tests/**.cpp"]
 link-libraries = ["Zyntercept", "Catch2"]
 include-directories = ["."]
+gcc.compile-options = ["-fpermissive"]

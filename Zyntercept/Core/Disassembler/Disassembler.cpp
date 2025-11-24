@@ -337,16 +337,19 @@ ZyanBool __zyntercept_cdecl ZynterceptFindReplaceableInstructions(
     *SizeOfFoundInstructions = SizeOfDecodedInstructions;
     *NumberOfFoundInstructions = CountInstructions;
 
-    errno_t Status = memcpy_s(
-        DecodedBuffer,
-        SizeOfDecodedBuffer,
-        InstructionsVector.data(),
-        InstructionsVector.size() * sizeof(ZydisDecoded));
-
-    if (Status != 0 || SizeOfDecodedInstructions < SizeOfDetour)
+    ZyanUSize BytesToCopy = InstructionsVector.size() * sizeof(ZydisDecoded);
+    
+    if (BytesToCopy > SizeOfDecodedBuffer)
     {
         return ZYAN_FALSE;
     }
+
+    if (SizeOfDecodedInstructions < SizeOfDetour)
+    {
+        return ZYAN_FALSE;
+    }
+
+    memcpy(DecodedBuffer, InstructionsVector.data(), BytesToCopy);
 
     return ZYAN_TRUE;
 }

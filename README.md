@@ -4,441 +4,413 @@ Zyntercept is a Zydis-based library that provides function hooking capabilities 
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Building](#building)
-- [Core Concepts](#core-concepts)
+- [About the Project](#about-the-project)
+- [Purpose](#purpose)
+- [Installation and Build](#installation-and-build)
+  - [Linux](#linux)
+  - [Windows](#windows)
+- [Minimal Examples](#minimal-examples)
+  - [Linux Example: Hooking the `read` syscall](#linux-example-hooking-the-read-syscall)
+  - [Windows Example: Hooking the `ReadFile` function](#windows-example-hooking-the-readfile-function)
 - [High-Level API](#high-level-api)
-- [Usage Guide](#usage-guide)
-- [Examples](#examples)
-- [Error Handling](#error-handling)
-- [API Reference](#api-reference)
+- [Core Concepts](#core-concepts)
+- [Requirements](#requirements)
+- [Features](#features)
 - [Limitations and Considerations](#limitations-and-considerations)
 - [License](#license)
 
-## Overview
+## About the Project
 
 Zyntercept implements a transaction-based hooking system that allows developers to intercept function calls in a safe and atomic manner. The library automatically handles the complexity of instruction analysis, trampoline generation, and memory management, providing a clean and straightforward interface for function interception.
 
 The library is designed to work with both 32-bit and 64-bit processes on Windows and Unix-based operating systems, making it suitable for cross-platform development scenarios.
 
-## Features
+### Key Features
 
-- Transaction-based hooking system with atomic commit and rollback capabilities
-- Support for x86 and x86_64 architectures
-- Cross-platform support for Windows and Unix-based systems
-- Automatic trampoline generation for calling original functions
-- Intelligent instruction analysis and relocation
-- Support for functions with complex prologues, including loops and conditional branches
-- Thread-safe transaction management
-- Automatic rollback on failure
+- **Transaction-based hooking system**: All hook operations are executed within a transaction, ensuring atomicity
+- **Cross-platform support**: Works on Windows and Unix systems (Linux, etc.)
+- **Supported architectures**: x86 (32-bit) and x86_64 (64-bit)
+- **Automatic trampoline generation**: Preserves the original behavior of functions
+- **Intelligent instruction analysis**: Automatically relocates complex instructions
+- **Thread-safe**: Safe transaction management in multithreaded environments
 
-## Requirements
+## Purpose
 
-- CMake 3.15 or higher
-- C++ compiler with C++11 support
-- Zydis 4.0.0 (automatically fetched via CMake)
-- Windows: Visual Studio 2017 or later (for Windows builds)
-- Unix: GCC or Clang with standard development tools
+Zyntercept was created to provide a robust and cross-platform solution for system-level function interception. The main use cases include:
 
-## Building
+1. **Security Software**: Detection and prevention of malicious behavior through interception of system calls
+2. **API Instrumentation**: Monitoring and logging of operating system function calls
+3. **Malware Analysis**: Interception of syscalls for behavioral analysis
+4. **Debug Tool Development**: Function interception for execution flow analysis
+5. **Application Patching**: Modification of application behavior without changing source code
 
-### Generating Build Files
+The library uses the Zydis library for instruction disassembly, enabling precise analysis and safe code relocation during the hooking process.
 
-```sh
+## Installation and Build
+
+### Linux
+
+<details>
+<summary><b>Click to expand</b></summary>
+
+#### Prerequisites
+
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install build-essential cmake git
+
+# Fedora/RHEL
+sudo dnf install gcc gcc-c++ cmake git
+```
+
+#### Build
+
+```bash
+# Clone the repository (if you haven't already)
+git clone <repository-url>
 cd zyntercept
+
+# Generate build files
 cmkr gen
+
+# Or use CMake directly
+cmake -S . -B build -D CMAKE_BUILD_TYPE=Release
+
+# Compile
+cmake --build build --config Release
+
+# The library will be generated in:
+# build/libZyntercept.a (static)
+# build/libZyntercept.so (dynamic, if configured)
 ```
 
-### Windows Build (Visual Studio)
+#### Build for 32-bit (on 64-bit system)
 
-#### Debug Configuration
+```bash
+# Install 32-bit development dependencies
+sudo apt-get install gcc-multilib g++-multilib
 
-```sh
+# Configure for 32-bit
+cmake -S . -B build32 \
+    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_C_FLAGS="-m32" \
+    -D CMAKE_CXX_FLAGS="-m32"
+
+cmake --build build32
+```
+
+#### Installation (Optional)
+
+```bash
+# Install to system
+sudo cmake --install build --prefix /usr/local
+
+# Or to a specific directory
+cmake --install build --prefix ~/zyntercept-install
+```
+
+</details>
+
+### Windows
+
+<details>
+<summary><b>Click to expand</b></summary>
+
+#### Prerequisites
+
+- Visual Studio 2017 or later (with C++ Desktop Development)
+- CMake 3.15 or higher
+- Git for Windows (optional)
+
+#### Build with Visual Studio
+
+```powershell
+# Generate build files
+cmkr gen
+
+# Or use CMake directly for x64
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B build64 -D CMAKE_BUILD_TYPE=Release
+cmake --build build64 --config Release
+
 # For x86 (32-bit)
-cmake -G "Visual Studio 17 2022" -A Win32 -S . -B "build32" -D CMAKE_BUILD_TYPE=Debug
-cmake --build build32/
-
-# For x64 (64-bit)
-cmake -G "Visual Studio 17 2022" -A x64 -S . -B "build64" -D CMAKE_BUILD_TYPE=Debug
-cmake --build build64/
+cmake -G "Visual Studio 17 2022" -A Win32 -S . -B build32 -D CMAKE_BUILD_TYPE=Release
+cmake --build build32 --config Release
 ```
 
-#### Release Configuration
+#### Build via Command Line
 
-```sh
-# For x86 (32-bit)
-cmake -G "Visual Studio 17 2022" -A Win32 -S . -B "build32" -D CMAKE_BUILD_TYPE=Release
-cmake --build build32/
+```powershell
+# Debug x64
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B build64 -D CMAKE_BUILD_TYPE=Debug
+cmake --build build64 --config Debug
 
-# For x64 (64-bit)
-cmake -G "Visual Studio 17 2022" -A x64 -S . -B "build64" -D CMAKE_BUILD_TYPE=Release
-cmake --build build64/
+# Release x64
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B build64 -D CMAKE_BUILD_TYPE=Release
+cmake --build build64 --config Release
+
+# Debug x86
+cmake -G "Visual Studio 17 2022" -A Win32 -S . -B build32 -D CMAKE_BUILD_TYPE=Debug
+cmake --build build32 --config Debug
+
+# Release x86
+cmake -G "Visual Studio 17 2022" -A Win32 -S . -B build32 -D CMAKE_BUILD_TYPE=Release
+cmake --build build32 --config Release
 ```
 
-## Core Concepts
+#### Generated Files Location
 
-### Transactions
+```
+build64/
+  ├── Debug/
+  │   ├── Zyntercept.lib
+  │   └── Zyntercept.pdb
+  └── Release/
+      └── Zyntercept.lib
 
-Zyntercept uses a transaction-based model for hook management. All hook operations must be performed within a transaction context. This design ensures atomicity: either all hooks in a transaction are successfully applied, or none are applied at all.
-
-### Process Attachment
-
-Before attaching hooks, you must specify the target process. The library supports hooking functions in the current process or external processes (subject to platform-specific permissions).
-
-### Trampolines
-
-When a function is hooked, Zyntercept automatically generates a trampoline that preserves the original function's behavior. The trampoline contains the original instructions from the function's prologue, relocated to a safe memory location, followed by a jump back to the continuation point in the original function.
-
-### Macros
-
-The library provides convenience macros for C++ code:
-
-- `TRAMPOLINE(Routine)`: Declares a trampoline pointer for the original function
-- `ROUTINE(Routine)`: Returns the address of the function pointer (for use with `ZynterceptAttach`)
-- `INTERCEPTION(Routine)`: Returns the address of the interception function
-
-## High-Level API
-
-The high-level API consists of the following functions:
-
-- `ZynterceptTransactionBegin()`: Initiates a new transaction
-- `ZynterceptTransactionCommit()`: Commits all pending hook operations
-- `ZynterceptTransactionAbandon()`: Abandons the current transaction without applying changes
-- `ZynterceptAttachProcess()`: Specifies the target process for hooking operations
-- `ZynterceptAttach()`: Queues a function hook for attachment
-- `ZynterceptDetach()`: Queues a function hook for removal
-
-## Usage Guide
-
-### Basic Workflow
-
-The standard workflow for hooking a function consists of the following steps:
-
-1. Define the original function and the interception function
-2. Declare a trampoline using the `TRAMPOLINE` macro
-3. Configure the target process information
-4. Begin a transaction
-5. Attach the process
-6. Attach the hook
-7. Commit the transaction
-
-### Step-by-Step Instructions
-
-#### Step 1: Define Functions
-
-Define the function you wish to intercept and create an interception function with matching signature:
-
-```cpp
-// Original function
-static float CalculateSum(float a, float b) {
-    return a + b;
-}
-
-// Interception function
-static float InterceptCalculateSum(float a, float b) {
-    // Custom logic here
-    // Call original function via trampoline
-    return OriginalCalculateSum(a, b);
-}
+build32/
+  ├── Debug/
+  │   ├── Zyntercept.lib
+  │   └── Zyntercept.pdb
+  └── Release/
+      └── Zyntercept.lib
 ```
 
-#### Step 2: Declare Trampoline
+#### Using in Visual Studio
 
-Use the `TRAMPOLINE` macro to declare the trampoline pointer:
+1. Open the `zyntercept.sln` file generated in the build directory
+2. Select the configuration (Debug/Release) and platform (x86/x64)
+3. Build the `Zyntercept` project
 
-```cpp
-TRAMPOLINE(CalculateSum);
-```
+</details>
 
-This macro creates a pointer named `OriginalCalculateSum` that will point to the trampoline after the hook is applied.
+## Minimal Examples
 
-#### Step 3: Configure Process
+### Linux Example: Hooking the `read` syscall
 
-Initialize a `ZynterceptProcess` structure with the target process information:
+<details>
+<summary><b>Click to expand</b></summary>
 
-```cpp
-ZynterceptProcess Process = { 0 };
-
-#if defined(ZYNTERCEPT_WINDOWS)
-#include <Windows.h>
-Process.Identifier = GetCurrentProcess();
-#elif defined(ZYNTERCEPT_UNIX)
-#include <unistd.h>
-Process.Identifier = (void*)getpid();
-#endif
-
-Process.Architecture = ZynterceptIs64BitProcess(Process.Identifier)
-    ? ZYNTERCEPT_ARCHITECTURE_64BIT
-    : ZYNTERCEPT_ARCHITECTURE_32BIT;
-```
-
-#### Step 4: Begin Transaction
-
-Start a new transaction:
-
-```cpp
-if (!ZynterceptTransactionBegin()) {
-    // Handle error: transaction may already be open
-    return false;
-}
-```
-
-#### Step 5: Attach Process
-
-Specify the target process for the transaction:
-
-```cpp
-if (!ZynterceptAttachProcess(&Process)) {
-    // Handle error: invalid process or transaction not open
-    ZynterceptTransactionAbandon();
-    return false;
-}
-```
-
-#### Step 6: Attach Hook
-
-Queue the function hook for attachment:
-
-```cpp
-if (!ZynterceptAttach(ROUTINE(CalculateSum), INTERCEPTION(CalculateSum))) {
-    // Handle error: transaction not open or invalid parameters
-    ZynterceptTransactionAbandon();
-    return false;
-}
-```
-
-#### Step 7: Commit Transaction
-
-Apply all queued hooks atomically:
-
-```cpp
-if (!ZynterceptTransactionCommit()) {
-    // Handle error: hook application failed, automatic rollback performed
-    return false;
-}
-```
-
-### Removing Hooks
-
-To remove a hook, follow the same workflow but use `ZynterceptDetach` instead of `ZynterceptAttach`:
-
-```cpp
-ZynterceptTransactionBegin();
-ZynterceptAttachProcess(&Process);
-ZynterceptDetach(ROUTINE(CalculateSum));
-ZynterceptTransactionCommit();
-```
-
-### Multiple Hooks in a Single Transaction
-
-You can attach or remove multiple hooks within a single transaction:
-
-```cpp
-ZynterceptTransactionBegin();
-ZynterceptAttachProcess(&Process);
-
-ZynterceptAttach(ROUTINE(Function1), INTERCEPTION(Function1));
-ZynterceptAttach(ROUTINE(Function2), INTERCEPTION(Function2));
-ZynterceptAttach(ROUTINE(Function3), INTERCEPTION(Function3));
-
-ZynterceptTransactionCommit(); // All hooks applied atomically
-```
-
-## Examples
-
-### Example 1: Basic Function Interception
-
-This example demonstrates intercepting a simple arithmetic function:
+This example demonstrates how to intercept the `read` syscall on Linux:
 
 ```cpp
 #include <Zyntercept/Zyntercept.h>
 #include <Zyntercept/Core/Syscall/Syscall.h>
-
-#if defined(ZYNTERCEPT_WINDOWS)
-#include <Windows.h>
-#endif
-
-#if defined(ZYNTERCEPT_UNIX)
 #include <unistd.h>
-#endif
+#include <fcntl.h>
+#include <cstdio>
+#include <cstring>
 
-// Original function
-static int Multiply(int a, int b) {
-    return a * b;
-}
+// Original function declaration
+ssize_t read(int fd, void* buf, size_t count);
 
 // Interception function
-static int InterceptMultiply(int a, int b) {
-    // Log the call or modify behavior
-    int result = OriginalMultiply(a, b);
-    return result * 2; // Modify return value
+static ssize_t InterceptRead(int fd, void* buf, size_t count) {
+    printf("[HOOK] read() called: fd=%d, count=%zu\n", fd, count);
+
+    // Call the original function through the trampoline
+    ssize_t result = OriginalRead(fd, buf, count);
+
+    printf("[HOOK] read() returned: %zd bytes\n", result);
+
+    return result;
 }
 
-TRAMPOLINE(Multiply);
+// Declare the trampoline
+TRAMPOLINE(read);
 
 int main() {
-    // Configure process
+    // Configure the process
     ZynterceptProcess Process = { 0 };
-
-#if defined(ZYNTERCEPT_WINDOWS)
-    Process.Identifier = GetCurrentProcess();
-#elif defined(ZYNTERCEPT_UNIX)
-    Process.Identifier = (void*)getpid();
-#endif
-
+    Process.Identifier = (void*)(uintptr_t)getpid();
     Process.Architecture = ZynterceptIs64BitProcess(Process.Identifier)
         ? ZYNTERCEPT_ARCHITECTURE_64BIT
         : ZYNTERCEPT_ARCHITECTURE_32BIT;
 
-    // Apply hook
+    // Apply the hook
     if (!ZynterceptTransactionBegin()) {
+        fprintf(stderr, "Error starting transaction\n");
         return 1;
     }
 
     if (!ZynterceptAttachProcess(&Process)) {
+        fprintf(stderr, "Error attaching process\n");
         ZynterceptTransactionAbandon();
         return 1;
     }
 
-    if (!ZynterceptAttach(ROUTINE(Multiply), INTERCEPTION(Multiply))) {
+    if (!ZynterceptAttach(ROUTINE(read), INTERCEPTION(read))) {
+        fprintf(stderr, "Error attaching hook\n");
         ZynterceptTransactionAbandon();
         return 1;
     }
 
     if (!ZynterceptTransactionCommit()) {
+        fprintf(stderr, "Error committing transaction\n");
         return 1;
     }
 
-    // Function is now hooked
-    int result = Multiply(5, 3); // Returns 30 (15 * 2)
+    // Test the hook
+    char buffer[256];
+    int fd = open("/etc/passwd", O_RDONLY);
+    if (fd >= 0) {
+        ssize_t bytes = read(fd, buffer, sizeof(buffer) - 1);
+        if (bytes > 0) {
+            buffer[bytes] = '\0';
+            printf("Content read: %s\n", buffer);
+        }
+        close(fd);
+    }
 
-    // Remove hook
+    // Remove the hook
     ZynterceptTransactionBegin();
     ZynterceptAttachProcess(&Process);
-    ZynterceptDetach(ROUTINE(Multiply));
+    ZynterceptDetach(ROUTINE(read));
     ZynterceptTransactionCommit();
-
-    // Function behavior restored
-    result = Multiply(5, 3); // Returns 15
 
     return 0;
 }
 ```
 
-### Example 2: Conditional Interception
+**Compilation:**
 
-This example demonstrates conditional behavior in an interception function:
-
-```cpp
-static int ProcessValue(int value) {
-    if (value < 0) {
-        return 0;
-    }
-    return value * 2;
-}
-
-static int InterceptProcessValue(int value) {
-    // Only intercept positive values
-    if (value > 100) {
-        return -1; // Reject large values
-    }
-    return OriginalProcessValue(value);
-}
-
-TRAMPOLINE(ProcessValue);
+```bash
+g++ -o example_read example_read.cpp -L./build -lZyntercept -I./Zyntercept
 ```
 
-### Example 3: Multiple Hooks with Error Handling
+</details>
 
-This example demonstrates proper error handling when applying multiple hooks:
+### Windows Example: Hooking the `ReadFile` function
+
+<details>
+<summary><b>Click to expand</b></summary>
+
+This example demonstrates how to intercept the `ReadFile` function on Windows (equivalent to Linux's `read`):
 
 ```cpp
-bool ApplyHooks() {
+#include <Zyntercept/Zyntercept.h>
+#include <Zyntercept/Core/Syscall/Syscall.h>
+#include <Windows.h>
+#include <cstdio>
+
+// Original function declaration
+BOOL ReadFile(
+    HANDLE hFile,
+    LPVOID lpBuffer,
+    DWORD nNumberOfBytesToRead,
+    LPDWORD lpNumberOfBytesRead,
+    LPOVERLAPPED lpOverlapped
+);
+
+// Interception function
+static BOOL InterceptReadFile(
+    HANDLE hFile,
+    LPVOID lpBuffer,
+    DWORD nNumberOfBytesToRead,
+    LPDWORD lpNumberOfBytesRead,
+    LPOVERLAPPED lpOverlapped)
+{
+    printf("[HOOK] ReadFile() called: handle=0x%p, bytes=%lu\n",
+           hFile, nNumberOfBytesToRead);
+
+    // Call the original function through the trampoline
+    BOOL result = OriginalReadFile(
+        hFile,
+        lpBuffer,
+        nNumberOfBytesToRead,
+        lpNumberOfBytesRead,
+        lpOverlapped
+    );
+
+    if (result && lpNumberOfBytesRead) {
+        printf("[HOOK] ReadFile() returned: %lu bytes read\n",
+               *lpNumberOfBytesRead);
+    }
+
+    return result;
+}
+
+// Declare the trampoline
+TRAMPOLINE(ReadFile);
+
+int main() {
+    // Configure the process
     ZynterceptProcess Process = { 0 };
+    Process.Identifier = GetCurrentProcess();
+    Process.Architecture = ZynterceptIs64BitProcess(Process.Identifier)
+        ? ZYNTERCEPT_ARCHITECTURE_64BIT
+        : ZYNTERCEPT_ARCHITECTURE_32BIT;
 
-    // ... configure process ...
-
+    // Apply the hook
     if (!ZynterceptTransactionBegin()) {
-        return false;
+        fprintf(stderr, "Error starting transaction\n");
+        return 1;
     }
 
     if (!ZynterceptAttachProcess(&Process)) {
+        fprintf(stderr, "Error attaching process\n");
         ZynterceptTransactionAbandon();
-        return false;
+        return 1;
     }
 
-    // Queue multiple hooks
-    if (!ZynterceptAttach(ROUTINE(Function1), INTERCEPTION(Function1)) ||
-        !ZynterceptAttach(ROUTINE(Function2), INTERCEPTION(Function2)) ||
-        !ZynterceptAttach(ROUTINE(Function3), INTERCEPTION(Function3))) {
+    if (!ZynterceptAttach(ROUTINE(ReadFile), INTERCEPTION(ReadFile))) {
+        fprintf(stderr, "Error attaching hook\n");
         ZynterceptTransactionAbandon();
-        return false;
+        return 1;
     }
 
-    // Commit: all hooks applied atomically, or none if any fails
     if (!ZynterceptTransactionCommit()) {
-        // Automatic rollback occurred
-        return false;
+        fprintf(stderr, "Error committing transaction\n");
+        return 1;
     }
 
-    return true;
-}
-```
+    // Test the hook
+    HANDLE hFile = CreateFileA(
+        "C:\\Windows\\System32\\drivers\\etc\\hosts",
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
 
-## Error Handling
+    if (hFile != INVALID_HANDLE_VALUE) {
+        char buffer[256] = { 0 };
+        DWORD bytesRead = 0;
 
-All API functions return boolean values indicating success or failure. It is essential to check return values and handle errors appropriately.
-
-### Common Error Scenarios
-
-1. **Transaction Already Open**: `ZynterceptTransactionBegin()` returns `false` if a transaction is already active. Always check the return value and abandon the previous transaction if necessary.
-
-2. **Transaction Not Open**: `ZynterceptAttach()`, `ZynterceptDetach()`, and `ZynterceptAttachProcess()` return `false` if called outside a transaction context.
-
-3. **Invalid Process**: `ZynterceptAttachProcess()` returns `false` if the process identifier is invalid or null.
-
-4. **Hook Application Failure**: `ZynterceptTransactionCommit()` returns `false` if any hook in the transaction fails to apply. The library automatically performs rollback in this case.
-
-5. **Detach Failure**: `ZynterceptDetach()` returns `false` if the specified hook is not currently attached.
-
-### Error Handling Best Practices
-
-Always check return values and use `ZynterceptTransactionAbandon()` to clean up failed transactions:
-
-```cpp
-if (!ZynterceptTransactionBegin()) {
-    // Handle: transaction may already be open
-    if (ZynterceptTransactionAbandon()) {
-        // Retry
-        if (!ZynterceptTransactionBegin()) {
-            return false;
+        if (ReadFile(hFile, buffer, sizeof(buffer) - 1, &bytesRead, NULL)) {
+            buffer[bytesRead] = '\0';
+            printf("Content read: %s\n", buffer);
         }
-    } else {
-        return false;
+
+        CloseHandle(hFile);
     }
-}
 
-if (!ZynterceptAttachProcess(&Process)) {
-    ZynterceptTransactionAbandon();
-    return false;
-}
+    // Remove the hook
+    ZynterceptTransactionBegin();
+    ZynterceptAttachProcess(&Process);
+    ZynterceptDetach(ROUTINE(ReadFile));
+    ZynterceptTransactionCommit();
 
-if (!ZynterceptAttach(ROUTINE(Function), INTERCEPTION(Function))) {
-    ZynterceptTransactionAbandon();
-    return false;
-}
-
-if (!ZynterceptTransactionCommit()) {
-    // Automatic rollback occurred, no need to abandon
-    return false;
+    return 0;
 }
 ```
 
-## API Reference
+**Compilation (Visual Studio):**
 
-### ZynterceptTransactionBegin
+Add the project to your solution or compile via command line:
+
+```powershell
+cl /EHsc example_readfile.cpp /I. /link Zyntercept.lib
+```
+
+</details>
+
+## High-Level API
+
+<details>
+<summary><b>ZynterceptTransactionBegin</b></summary>
 
 ```cpp
 bool ZynterceptTransactionBegin();
@@ -450,7 +422,19 @@ Initiates a new transaction. Only one transaction can be active at a time.
 
 **Thread Safety**: Thread-safe. Uses internal mutex for synchronization.
 
-### ZynterceptTransactionCommit
+**Example:**
+
+```cpp
+if (!ZynterceptTransactionBegin()) {
+    // Handle error: transaction may already be open
+    return false;
+}
+```
+
+</details>
+
+<details>
+<summary><b>ZynterceptTransactionCommit</b></summary>
 
 ```cpp
 bool ZynterceptTransactionCommit();
@@ -462,7 +446,19 @@ Commits all pending hook operations in the current transaction. If any hook fail
 
 **Thread Safety**: Thread-safe. Uses internal mutex for synchronization.
 
-### ZynterceptTransactionAbandon
+**Example:**
+
+```cpp
+if (!ZynterceptTransactionCommit()) {
+    // Automatic rollback occurred
+    return false;
+}
+```
+
+</details>
+
+<details>
+<summary><b>ZynterceptTransactionAbandon</b></summary>
 
 ```cpp
 bool ZynterceptTransactionAbandon();
@@ -474,7 +470,19 @@ Abandons the current transaction without applying any changes. All queued operat
 
 **Thread Safety**: Thread-safe. Uses internal mutex for synchronization.
 
-### ZynterceptAttachProcess
+**Example:**
+
+```cpp
+if (!ZynterceptAttach(ROUTINE(Function), INTERCEPTION(Function))) {
+    ZynterceptTransactionAbandon();
+    return false;
+}
+```
+
+</details>
+
+<details>
+<summary><b>ZynterceptAttachProcess</b></summary>
 
 ```cpp
 bool ZynterceptAttachProcess(ZynterceptProcess* Process);
@@ -482,7 +490,7 @@ bool ZynterceptAttachProcess(ZynterceptProcess* Process);
 
 Specifies the target process for hooking operations within the current transaction. Must be called after `ZynterceptTransactionBegin()` and before `ZynterceptAttach()` or `ZynterceptDetach()`.
 
-**Parameters**:
+**Parameters:**
 
 - `Process`: Pointer to a `ZynterceptProcess` structure containing the process identifier and architecture.
 
@@ -490,7 +498,40 @@ Specifies the target process for hooking operations within the current transacti
 
 **Thread Safety**: Thread-safe. Uses internal mutex for synchronization.
 
-### ZynterceptAttach
+**ZynterceptProcess Structure:**
+
+```cpp
+typedef struct ZynterceptProcess_ {
+    ZynterceptHandle Identifier;  // HANDLE (Windows) or pid_t (Unix)
+    ZynterceptArchitecture Architecture;  // ZYNTERCEPT_ARCHITECTURE_32BIT or 64BIT
+} ZynterceptProcess;
+```
+
+**Example:**
+
+```cpp
+ZynterceptProcess Process = { 0 };
+
+#if defined(ZYNTERCEPT_WINDOWS)
+Process.Identifier = GetCurrentProcess();
+#elif defined(ZYNTERCEPT_UNIX)
+Process.Identifier = (void*)(uintptr_t)getpid();
+#endif
+
+Process.Architecture = ZynterceptIs64BitProcess(Process.Identifier)
+    ? ZYNTERCEPT_ARCHITECTURE_64BIT
+    : ZYNTERCEPT_ARCHITECTURE_32BIT;
+
+if (!ZynterceptAttachProcess(&Process)) {
+    ZynterceptTransactionAbandon();
+    return false;
+}
+```
+
+</details>
+
+<details>
+<summary><b>ZynterceptAttach</b></summary>
 
 ```cpp
 bool ZynterceptAttach(void** TargetRoutine, void* InterceptionRoutine);
@@ -498,7 +539,7 @@ bool ZynterceptAttach(void** TargetRoutine, void* InterceptionRoutine);
 
 Queues a function hook for attachment. The hook will be applied when `ZynterceptTransactionCommit()` is called.
 
-**Parameters**:
+**Parameters:**
 
 - `TargetRoutine`: Pointer to a function pointer that will be redirected to the trampoline after hooking.
 - `InterceptionRoutine`: Pointer to the interception function that will be called instead of the original function.
@@ -509,7 +550,19 @@ Queues a function hook for attachment. The hook will be applied when `Zyntercept
 
 **Note**: Use the `ROUTINE()` and `INTERCEPTION()` macros for convenience when working with C++ code.
 
-### ZynterceptDetach
+**Example:**
+
+```cpp
+if (!ZynterceptAttach(ROUTINE(ReadFile), INTERCEPTION(ReadFile))) {
+    ZynterceptTransactionAbandon();
+    return false;
+}
+```
+
+</details>
+
+<details>
+<summary><b>ZynterceptDetach</b></summary>
 
 ```cpp
 bool ZynterceptDetach(void** TargetRoutine);
@@ -517,7 +570,7 @@ bool ZynterceptDetach(void** TargetRoutine);
 
 Queues a function hook for removal. The hook will be removed when `ZynterceptTransactionCommit()` is called.
 
-**Parameters**:
+**Parameters:**
 
 - `TargetRoutine`: Pointer to the function pointer that was used when attaching the hook.
 
@@ -527,38 +580,19 @@ Queues a function hook for removal. The hook will be removed when `ZynterceptTra
 
 **Note**: Use the `ROUTINE()` macro for convenience when working with C++ code.
 
-### Data Structures
-
-#### ZynterceptProcess
+**Example:**
 
 ```cpp
-typedef struct ZynterceptProcess_ {
-    ZynterceptHandle Identifier;
-    ZynterceptArchitecture Architecture;
-} ZynterceptProcess;
+ZynterceptTransactionBegin();
+ZynterceptAttachProcess(&Process);
+ZynterceptDetach(ROUTINE(ReadFile));
+ZynterceptTransactionCommit();
 ```
 
-Structure containing process information for hooking operations.
+</details>
 
-**Fields**:
-
-- `Identifier`: Process handle or identifier (platform-specific).
-  - Windows: `HANDLE` from `GetCurrentProcess()` or `OpenProcess()`
-  - Unix: Process ID from `getpid()` or process identifier
-- `Architecture`: Process architecture (`ZYNTERCEPT_ARCHITECTURE_32BIT` or `ZYNTERCEPT_ARCHITECTURE_64BIT`)
-
-#### ZynterceptArchitecture
-
-```cpp
-typedef enum ZynterceptArchitecture_ {
-    ZYNTERCEPT_ARCHITECTURE_32BIT,
-    ZYNTERCEPT_ARCHITECTURE_64BIT,
-} ZynterceptArchitecture;
-```
-
-Enumeration specifying the target process architecture.
-
-### Macros
+<details>
+<summary><b>Helper Macros</b></summary>
 
 #### TRAMPOLINE
 
@@ -568,15 +602,15 @@ TRAMPOLINE(Routine);
 
 Declares a trampoline pointer for the specified function. Creates a pointer named `Original##Routine` that points to the trampoline after hooking.
 
-**Parameters**:
+**Parameters:**
 
 - `Routine`: Name of the function (without parentheses or parameters).
 
-**Example**:
+**Example:**
 
 ```cpp
-TRAMPOLINE(CalculateSum);
-// Creates: static decltype(CalculateSum)* OriginalCalculateSum = CalculateSum;
+TRAMPOLINE(ReadFile);
+// Creates: static decltype(&ReadFile) OriginalReadFile = &ReadFile;
 ```
 
 #### ROUTINE
@@ -587,16 +621,16 @@ ROUTINE(Routine);
 
 Returns the address of the function pointer for use with `ZynterceptAttach()` or `ZynterceptDetach()`.
 
-**Parameters**:
+**Parameters:**
 
 - `Routine`: Name of the function (without parentheses or parameters).
 
 **Returns**: Address of the function pointer (`void**`).
 
-**Example**:
+**Example:**
 
 ```cpp
-ZynterceptAttach(ROUTINE(CalculateSum), INTERCEPTION(CalculateSum));
+ZynterceptAttach(ROUTINE(ReadFile), INTERCEPTION(ReadFile));
 ```
 
 #### INTERCEPTION
@@ -607,45 +641,159 @@ INTERCEPTION(Routine);
 
 Returns the address of the interception function for use with `ZynterceptAttach()`.
 
-**Parameters**:
+**Parameters:**
 
 - `Routine`: Name of the interception function (without parentheses or parameters).
 
 **Returns**: Address of the interception function (`void*`).
 
-**Example**:
+**Example:**
 
 ```cpp
-ZynterceptAttach(ROUTINE(CalculateSum), INTERCEPTION(CalculateSum));
+ZynterceptAttach(ROUTINE(ReadFile), INTERCEPTION(ReadFile));
 ```
+
+</details>
+
+## Core Concepts
+
+<details>
+<summary><b>Transactions</b></summary>
+
+Zyntercept uses a transaction-based model for hook management. All hook operations must be performed within a transaction context. This design ensures atomicity: either all hooks in a transaction are successfully applied, or none are applied at all.
+
+**Transaction Flow:**
+
+1. `ZynterceptTransactionBegin()` - Starts the transaction
+2. `ZynterceptAttachProcess()` - Specifies the target process
+3. `ZynterceptAttach()` / `ZynterceptDetach()` - Queues operations
+4. `ZynterceptTransactionCommit()` - Applies all operations atomically
+
+If any operation fails during commit, all changes are automatically reverted.
+
+</details>
+
+<details>
+<summary><b>Process Attachment</b></summary>
+
+Before attaching hooks, you must specify the target process. The library supports hooking functions in the current process or external processes (subject to platform-specific permissions).
+
+**Current Process:**
+
+```cpp
+#if defined(ZYNTERCEPT_WINDOWS)
+Process.Identifier = GetCurrentProcess();
+#elif defined(ZYNTERCEPT_UNIX)
+Process.Identifier = (void*)(uintptr_t)getpid();
+#endif
+```
+
+**External Process (requires appropriate permissions):**
+
+```cpp
+#if defined(ZYNTERCEPT_WINDOWS)
+HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
+Process.Identifier = hProcess;
+#elif defined(ZYNTERCEPT_UNIX)
+Process.Identifier = (void*)(uintptr_t)targetPid;
+#endif
+```
+
+</details>
+
+<details>
+<summary><b>Trampolines</b></summary>
+
+When a function is hooked, Zyntercept automatically generates a trampoline that preserves the original function's behavior. The trampoline contains the original instructions from the function's prologue, relocated to a safe memory location, followed by a jump back to the continuation point in the original function.
+
+**How It Works:**
+
+1. Zyntercept analyzes the first instructions of the target function
+2. Relocates these instructions to an allocated memory area nearby
+3. Adds a jump back to continue execution after the prologue
+4. Replaces the original prologue with a jump to the interception function
+5. The trampoline pointer points to the relocated code
+
+This allows the interception function to call the original function through the trampoline without causing infinite recursion.
+
+</details>
+
+## Requirements
+
+- **CMake**: 3.15 or higher
+- **C++ Compiler**: With C++11 support
+- **Zydis**: 4.0.0 (automatically fetched via CMake)
+- **Windows**: Visual Studio 2017 or later (for Windows builds)
+- **Unix/Linux**: GCC or Clang with standard development tools
+
+### Automatic Dependencies
+
+Zydis is automatically fetched by CMake during project configuration, so there's no need to install it manually.
+
+## Features
+
+<details>
+<summary><b>Click to expand</b></summary>
+
+- Transaction-based hooking system with atomic commit and rollback capabilities
+- Support for x86 and x86_64 architectures
+- Cross-platform support for Windows and Unix-based systems
+- Automatic trampoline generation for calling original functions
+- Intelligent instruction analysis and relocation
+- Support for functions with complex prologues, including loops and conditional branches
+- Thread-safe transaction management
+- Automatic rollback on failure
+
+</details>
 
 ## Limitations and Considerations
 
-### Function Prologue Requirements
+<details>
+<summary><b>Function Prologue Requirements</b></summary>
 
 Functions must have a prologue of sufficient size to accommodate the detour jump instruction (5 bytes for x86, 14 bytes for x64). Functions with very short prologues may not be hookable.
 
-### Instruction Relocation
+</details>
+
+<details>
+<summary><b>Instruction Relocation</b></summary>
 
 The library automatically relocates instructions from the function prologue to the trampoline. Complex instructions, particularly those with relative addressing, are handled automatically. However, certain edge cases may not be supported.
 
-### Thread Safety
+</details>
+
+<details>
+<summary><b>Thread Safety</b></summary>
 
 While the transaction API is thread-safe, care must be taken when hooking functions that may be called from multiple threads. The interception functions themselves are not automatically synchronized.
 
-### Process Permissions
+</details>
+
+<details>
+<summary><b>Process Permissions</b></summary>
 
 Hooking functions in external processes requires appropriate permissions. On Windows, this typically requires administrator privileges or debug privileges. On Unix systems, appropriate permissions depend on the target process ownership and system configuration.
 
-### Memory Allocation
+</details>
+
+<details>
+<summary><b>Memory Allocation</b></summary>
 
 The library allocates memory for trampolines near the target function to ensure that relative jumps remain within range. If memory allocation fails, hooking will fail.
 
-### Recursive Functions
+</details>
+
+<details>
+<summary><b>Recursive Functions</b></summary>
 
 The library supports hooking recursive functions. When calling the original function through the trampoline from within an interception function, the interception will not be triggered again for that call.
 
+</details>
+
 ## License
+
+<details>
+<summary><b>Click to expand</b></summary>
 
 Copyright (c) 2024 Muryllo Pimenta
 
@@ -666,3 +814,5 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+</details>
