@@ -103,9 +103,11 @@ add_library(Zyntercept)
 target_sources(Zyntercept PRIVATE ${Zyntercept_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${Zyntercept_SOURCES})
 
-target_compile_options(Zyntercept PUBLIC
-	-fpermissive
-)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "GNU") # gcc
+	target_compile_options(Zyntercept PUBLIC
+		-fpermissive
+	)
+endif()
 
 target_include_directories(Zyntercept PUBLIC
 	.
@@ -135,9 +137,11 @@ if(ZYNTERCEPT_BUILD_TESTS AND CMKR_ROOT_PROJECT) # tests
 	target_sources(Zyntercept_Tests PRIVATE ${Zyntercept_Tests_SOURCES})
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${Zyntercept_Tests_SOURCES})
 
-	target_compile_options(Zyntercept_Tests PRIVATE
-		-fpermissive
-	)
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "GNU") # gcc
+		target_compile_options(Zyntercept_Tests PRIVATE
+			-fpermissive
+		)
+	endif()
 
 	target_include_directories(Zyntercept_Tests PRIVATE
 		.

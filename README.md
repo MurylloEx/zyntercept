@@ -25,6 +25,11 @@ Zyntercept implements a transaction-based hooking system that allows developers 
 
 The library is designed to work with both 32-bit and 64-bit processes on Windows and Unix-based operating systems, making it suitable for cross-platform development scenarios.
 
+### Architecture
+
+<img src="./architecture.svg" alt="Zyntercept Architecture" />
+<p align="center"><em>Figure 1: Zyntercept engine architecture and interaction flow</em></p>
+
 ### Key Features
 
 - **Transaction-based hooking system**: All hook operations are executed within a transaction, ensuring atomicity
