@@ -13,22 +13,22 @@ static ZyanVoidPointer ProcessIdentifier = GetCurrentProcess();
 static ZyanVoidPointer ProcessIdentifier = (ZyanVoidPointer)(ZyanUPointer)getpid();
 #endif
 
-static void NoopFunction() {
+__zyntercept_noinline static void NoopFunction() {
     static uint64_t NoopCounter = 0;
     NoopCounter++;
 }
 
-static float Sum(float a, float b) {
+__zyntercept_noinline static float Sum(float a, float b) {
     NoopFunction();
     return a + b;
 }
 
-static float Subtract(float a, float b) {
+__zyntercept_noinline static float Subtract(float a, float b) {
     NoopFunction();
     return a - b;
 }
 
-static float Pow(float a, unsigned short b) {
+__zyntercept_noinline static float Pow(float a, unsigned short b) {
     NoopFunction();
     float accumulator = 1;
 
@@ -40,7 +40,7 @@ static float Pow(float a, unsigned short b) {
     return accumulator;
 }
 
-static int Fibonacci(int n) {
+__zyntercept_noinline static int Fibonacci(int n) {
     NoopFunction();
 
     if (n == 0 || n > 46) {
