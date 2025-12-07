@@ -8,12 +8,19 @@
 #if defined(_MSC_VER) || defined(__BORLANDC__) || defined(__CODEGEARC__) || defined(__DMC__)
 // MSVC, Borland, Digital Mars and compatibles with __declspec
 #define __zyntercept_noinline __declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER) || \
-      defined(__SUNPRO_C) || defined(__SUNPRO_CC) || defined(__xlC__) || \
+#elif defined(__clang__)
+// Clang (including Emscripten) - must be checked before __GNUC__ since Clang defines both
+#define __zyntercept_noinline __attribute__((noinline, optnone))
+#elif defined(__GNUC__)
+// GCC (also catches some compilers that emulate GCC like NVCC, PGI)
+#define __zyntercept_noinline __attribute__((noinline, optimize("O0")))
+#elif defined(__INTEL_COMPILER) || defined(__ICC) || defined(__ECC) || defined(__ICL)
+// Intel Compiler - optimize attribute not supported, use noinline only
+#define __zyntercept_noinline __attribute__((noinline))
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC) || defined(__xlC__) || \
       defined(__IBMC__) || defined(__IBMCPP__) || defined(__HP_cc) || \
-      defined(__HP_aCC) || defined(__ARMCC_VERSION) || defined(__TI_COMPILER_VERSION__) || \
-      defined(__NVCC__) || defined(__PGI) || defined(__EMSCRIPTEN__)
-// GCC, Clang, Intel, Sun, IBM, HP, ARM, TI, NVIDIA, PGI, Emscripten
+      defined(__HP_aCC) || defined(__ARMCC_VERSION) || defined(__TI_COMPILER_VERSION__)
+// Sun, IBM, HP, ARM, TI - noinline only
 #define __zyntercept_noinline __attribute__((noinline))
 #else
 #define __zyntercept_noinline __attribute__((noinline))
